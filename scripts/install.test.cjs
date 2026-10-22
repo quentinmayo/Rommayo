@@ -23,7 +23,7 @@ function fixture(callback){
   callback({dir,prefix,env,run:(args=[],extra={})=>spawnSync('bash',[installer,...args],{env:{...env,...extra},encoding:'utf8'})});
  }finally{fs.rmSync(dir,{recursive:true,force:true})}
 }
-test('verified Steam Deck install needs no sudo and preserves arguments and profile',()=>fixture(({prefix,run})=>{
+test('verified Steam Deck install needs no sudo and preserves arguments and profile',{skip:process.platform === 'win32'},()=>fixture(({prefix,run})=>{
  const result=run(['--steam-deck']);assert.equal(result.status,0,result.stderr);
  const launcher=path.join(prefix,'bin',slug),entry=fs.readFileSync(path.join(prefix,'share','applications',slug+'.desktop'),'utf8');
  assert.match(entry,new RegExp(`Name=${app}`));assert.ok(entry.includes('Exec="'+launcher+'"'));
@@ -32,12 +32,12 @@ test('verified Steam Deck install needs no sudo and preserves arguments and prof
  assert.equal(run(['--steam-deck']).status,0);assert.equal(fs.readFileSync(profile,'utf8'),'keep-progress');
  assert.ok(fs.existsSync(path.join(prefix,'share',slug,app+'.AppImage.previous')));
 }));
-test('checksum failure leaves installed app unchanged',()=>fixture(({dir,prefix,run})=>{
+test('checksum failure leaves installed app unchanged',{skip:process.platform === 'win32'},()=>fixture(({dir,prefix,run})=>{
  assert.equal(run().status,0);const target=path.join(prefix,'share',slug,app+'.AppImage'),original=fs.readFileSync(target);
  fs.writeFileSync(path.join(dir,'SHA256SUMS.txt'),`${'0'.repeat(64)}  ${app}-${version}-linux-x86_64.AppImage\n`);
  const result=run();assert.notEqual(result.status,0);assert.match(result.stderr,/Checksum mismatch/);assert.deepEqual(fs.readFileSync(target),original);
 }));
-test('dry run selects correct Mac architecture and rejects unsupported combinations',()=>fixture(({run})=>{
+test('dry run selects correct Mac architecture and rejects unsupported combinations',{skip:process.platform === 'win32'},()=>fixture(({run})=>{
  assert.match(run(['--dry-run'],{MAYO_TEST_OS:'Darwin',MAYO_TEST_ARCH:'arm64'}).stdout,/mac-arm64.dmg/);
  assert.match(run(['--dry-run'],{MAYO_TEST_OS:'Darwin',MAYO_TEST_ARCH:'x86_64'}).stdout,/mac-x64.dmg/);
  assert.notEqual(run(['--dry-run','--steam-deck'],{MAYO_TEST_OS:'Darwin'}).status,0);
