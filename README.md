@@ -111,3 +111,15 @@ See [security](SECURITY.md), [contributing](CONTRIBUTING.md), and the [MIT licen
 ## Support the developers ☕
 
 I need help affording my AI token usage :) If Rommayo makes your setup a little more fun, [buy the developers a coffee](https://buymeacoffee.com/quentinmayo). Always optional. Always appreciated. Rommayo stays free and open source.
+
+## One-line desktop & Steam Deck setup
+
+In Steam Deck **Desktop Mode**, open Konsole and run:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/quentinmayo/Rommayo/main/scripts/install.sh | bash -s -- --steam-deck
+```
+
+For macOS or Linux desktop, use the same command without `-s -- --steam-deck`. [Read the installer](scripts/install.sh) before running it. It downloads the pinned packaged release, verifies its SHA-256 checksum, and installs into your own account without sudo. Game files and app profiles are preserved during updates. Windows users can use the installer in Downloads above.
+
+On Steam Deck, open **Steam → Games → Add a Non-Steam Game**, select **Rommayo**, then return to **Gaming Mode → Library → Non-Steam**. The generated launcher includes `--deck`; leave Proton/Compatibility disabled. This is a native Linux Electron app. Save/export progress before closing a game.

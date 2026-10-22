@@ -20,7 +20,8 @@
     "dist": "electron-builder --publish never",
     "dist:linux": "electron-builder --linux AppImage --x64 --publish never",
     "android:debug": "cd android && ./gradlew assembleDebug",
-    "android:release": "cd android && ./gradlew assembleRelease"
+    "android:release": "cd android && ./gradlew assembleRelease",
+    "test:install": "node --test scripts/install.test.cjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
