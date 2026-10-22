@@ -72,7 +72,11 @@ async function logOut() {
   try {
     closeRemote();
     const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 10000);
-    try { const response = await ses.fetch(new URL('api/logout', address).href, { method: 'POST', credentials: 'include', redirect: 'error', signal: controller.signal }); await response.arrayBuffer(); } catch { /* Local sign-out must work offline. */ } finally { clearTimeout(timeout); }
+    try {
+      const heartbeat = await ses.fetch(new URL('api/heartbeat', address).href, { credentials: 'include', redirect: 'error', signal: controller.signal }); await heartbeat.arrayBuffer();
+      const token = (await ses.cookies.get({ url: address })).find(cookie => cookie.name === 'romm_csrftoken')?.value;
+      const response = await ses.fetch(new URL('api/logout', address).href, { method: 'POST', credentials: 'include', redirect: 'error', signal: controller.signal, headers: token ? { 'x-csrftoken': token } : {} }); await response.arrayBuffer();
+    } catch { /* Local sign-out must work offline. */ } finally { clearTimeout(timeout); }
     await clearAuthentication(address);
     servers = servers.filter(value => value !== address); temporaryServers = temporaryServers.filter(value => value !== address); server = ''; save();
   } finally { connecting = false; sendState(); }
