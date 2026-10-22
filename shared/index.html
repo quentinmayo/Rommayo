@@ -54,6 +54,8 @@
     <footer><span>MADE FOR YOUR PERSONAL ROMM SERVER</span><span>Independent companion · Not affiliated with the RomM project</span></footer>
     <p class="responsibility">No ROM sourcing or third-party download support. Use content you’re authorized to use. Downloads and use are at your own risk.</p>
   </main>
+  <aside id="desktop-exit" hidden><div class="exit-row"><div id="bottom-navigation"><button id="bottom-back" type="button">← Back</button><button id="bottom-home" type="button">⌂ Home</button><button id="bottom-fullscreen" type="button">⛶ Fullscreen</button><button id="controls-toggle" type="button" aria-expanded="false" aria-controls="player-actions">Game controls</button></div><button id="quit" type="button">Quit app</button></div><small id="exit-hint">Save or export before quitting.</small><section id="player-actions" hidden aria-label="Player actions"><button data-player-action="playPause">⏯ Pause / Resume</button><button data-player-action="saveState">▣ Save state</button><button data-player-action="loadState">↑ Load state</button><button data-player-action="saveSavFiles">↓ Export save</button><button data-player-action="loadSavFiles">↑ Import save</button><button data-player-action="gamepad">🎮 Controls</button><button data-player-action="settings">⚙ Settings</button><button data-player-action="volumeDown">− Volume</button><button data-player-action="volumeUp">+ Volume</button><button data-player-action="restart">↻ Restart</button><small id="player-action-status" role="status">L3 + R3 or F10: menu · D-pad: move · A: select · B: back</small></section></aside>
+  <script src="touch-controls.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

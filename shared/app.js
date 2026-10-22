@@ -14,6 +14,12 @@ function updateHttp() {
   if (!insecure) $('http-consent').checked = false;
 }
 function render(state) {
+  $('desktop-exit').hidden = !state.desktop;
+  $('bottom-navigation').hidden = !state.connected;
+  $('player-actions').hidden = !state.connected || !state.controlsOpen;
+  $('controls-toggle').setAttribute('aria-expanded', String(!!state.controlsOpen));
+  document.body.classList.toggle('desktop', !!state.desktop);
+  $('exit-hint').textContent = state.deck ? 'Save first. Exit: Quit app or STEAM → Exit game.' : 'Save or export before quitting.';
   if (state.configuredServer && !$('server').value) { $('server').value = state.configuredServer; updateHttp(); }
   $('toolbar').hidden = !state.connected;
   $('onboarding').hidden = !!state.connected;
@@ -57,7 +63,16 @@ $('web-login').addEventListener('click', () => {
   for (const id of ['server', 'consent', 'http-consent']) if (!$(id).reportValidity()) return;
   connect(true);
 });
-for (const type of ['back', 'home', 'reload', 'fullscreen', 'logout']) $(type).addEventListener('click', () => send({ type }).catch((e) => showError(e.message)));
+for (const type of ['back', 'home', 'reload', 'fullscreen', 'logout', 'quit']) $(type).addEventListener('click', () => send({ type }).catch((e) => showError(e.message)));
 $('switch').addEventListener('click', () => send({ type: 'disconnect' }).then((s) => s && render(s)));
 $('forget').addEventListener('click', () => send({ type: 'forget' }).then((s) => s && render(s)));
 send({ type: 'init' }).then((state) => state && render(state)).catch((e) => showError(e.message));
+
+for (const type of ['back','home','fullscreen']) $('bottom-'+type).addEventListener('click',()=>send({type}).catch(e=>showError(e.message)));
+const toggleControls = async(open)=>{const state=await send({type:'controls',open});if(state)render(state);if(open)focusPlayerMenu();};
+const focusPlayerMenu=bindPlayerMenu($('player-actions'),toggleControls,()=>!$('player-actions').hidden);
+$('controls-toggle').addEventListener('click',()=>toggleControls($('player-actions').hidden));
+for(const button of document.querySelectorAll('[data-player-action]')) button.addEventListener('click',async()=>{
+  try { await send({type:'player-action',action:button.dataset.playerAction}); $('player-action-status').textContent='Action sent to the player. Save/export completion is shown by the player.'; }
+  catch(error){$('player-action-status').textContent=error.message;}
+});

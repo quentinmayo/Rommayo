@@ -1,0 +1,5 @@
+/* Preserve the upstream clickable toolbar during Steam Deck gameplay. */
+.ejs_big_screen:has(.ejs_canvas_parent) .ejs_menu_bar,.ejs_small_screen:has(.ejs_canvas_parent) .ejs_menu_bar{opacity:1!important;visibility:visible!important;pointer-events:auto!important;overflow-x:auto;max-width:100%}
+.ejs_big_screen:has(.ejs_canvas_parent) .ejs_menu_bar_hidden{transform:translateY(0)!important}
+.ejs_small_screen:has(.ejs_canvas_parent) .ejs_menu_bar_hidden{transform:translate(-50%,0)!important}
+.ejs_parent:has(.ejs_canvas_parent) .ejs_menu_bar .ejs_menu_button{min-width:36px;min-height:44px;touch-action:manipulation}
