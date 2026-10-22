@@ -11,7 +11,11 @@ window.rommayo = {
       if (result.redirect) window.location.assign(result.redirect);
       return;
     }
-    if (command.type === 'forget') throw new Error('Use RomM’s profile menu to sign out. Clear this site’s browser data to remove all local sessions.');
+    if (command.type === 'forget' || command.type === 'logout') {
+      const response = await fetch('/__rommayo/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      if (!response.ok) throw new Error('Could not log out. Retry while connected to Rommayo.');
+      window.location.assign('/__rommayo/'); return;
+    }
     throw new Error('This action is available in the native app.');
   }
 };

@@ -10,6 +10,7 @@ test.beforeAll(async () => {
       if (req.headers.authorization !== `Basic ${Buffer.from('demo:demo').toString('base64')}`) { res.writeHead(401); return res.end('{}'); }
       res.setHeader('Set-Cookie', 'romm_session=fixture-session; HttpOnly; SameSite=Lax; Max-Age=86400; Path=/'); res.setHeader('Content-Type', 'application/json'); return res.end('{}');
     }
+    if (req.url === '/api/logout') { res.setHeader('Set-Cookie', 'romm_session=; Max-Age=0; Path=/'); return res.end('{}'); }
     if (req.url === '/fixture-download') { res.setHeader('Content-Disposition', 'attachment; filename="fixture.txt"'); return res.end('authorized fixture content'); }
     res.setHeader('Content-Type', 'text/html');
     if (!req.headers.cookie?.includes('romm_session=fixture-session')) return res.end('<h1>RomM sign-in</h1>');
@@ -95,4 +96,29 @@ test('leaving an active game asks first and respects both stay and leave', async
   await app.evaluate(({ dialog }) => { dialog.showMessageBoxSync = () => 1; });
   await shellPage.evaluate(() => window.rommayo.send({ type: 'home' }));
   await expect(remote).toHaveURL(`${address}/`);
+});
+
+test('unchecked remember login requires sign-in after restart while preserving game storage', async () => {
+  await fill(); await shellPage.locator('#remember-login').uncheck(); await shellPage.locator('.connect-button').click();
+  let remote = await remotePage(); await expect(remote.locator('h1')).toHaveText('My RomM library');
+  await remote.evaluate(() => localStorage.setItem('game-save-fixture','keep-progress'));
+  await app.close();
+  app = await _electron.launch({ args: [...(process.env.CI ? ['--no-sandbox'] : []), path.join(__dirname, '..')], env: { ...process.env, ROMMAYO_USER_DATA_DIRECTORY: data } });
+  shellPage = await app.firstWindow(); await shellPage.locator('#server').waitFor();
+  await expect(shellPage.locator('.saved-server')).toHaveCount(0);
+  await fill(); await shellPage.locator('#web-login').click(); remote = await remotePage();
+  await expect(remote.locator('h1')).toHaveText('RomM sign-in');
+  expect(await remote.evaluate(() => localStorage.getItem('game-save-fixture'))).toBe('keep-progress');
+});
+test('logout respects cancellation and clears authentication without deleting game storage', async () => {
+  await fill(); await shellPage.locator('.connect-button').click(); let remote = await remotePage();
+  await remote.evaluate(() => localStorage.setItem('game-save-fixture','keep-progress'));
+  await app.evaluate(({dialog}) => { dialog.showMessageBox = async () => ({response:0}); });
+  await shellPage.locator('#logout').click(); await expect(remote.locator('h1')).toHaveText('My RomM library');
+  await app.evaluate(({dialog}) => { dialog.showMessageBox = async () => ({response:1}); });
+  await shellPage.locator('#logout').click(); await expect(shellPage.locator('#onboarding')).toBeVisible();
+  await expect(shellPage.locator('.saved-server')).toHaveCount(0);
+  await shellPage.locator('#web-login').click(); remote = await remotePage();
+  await expect(remote.locator('h1')).toHaveText('RomM sign-in');
+  expect(await remote.evaluate(() => localStorage.getItem('game-save-fixture'))).toBe('keep-progress');
 });

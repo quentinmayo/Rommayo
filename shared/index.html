@@ -15,6 +15,7 @@
     <span class="toolbar-brand">R<span class="mint">■</span>MMAYO</span>
     <span id="server-label"></span>
     <button id="fullscreen" title="Fullscreen (F11)" aria-label="Fullscreen">⛶</button>
+    <button id="logout" title="Log out of RomM">Log out</button>
     <button id="switch" title="Switch server" aria-label="Switch server">☰</button>
   </header>
   <main id="onboarding">
@@ -37,6 +38,7 @@
           <small class="hint">Use the same address you open in your browser. LAN addresses work too.</small>
           <div class="credentials"><div><label for="username">USERNAME</label><input id="username" name="username" autocomplete="username" required maxlength="256"></div><div><label for="password">PASSWORD</label><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="4096"></div></div>
           <small class="hint">Your session cookie stays on this device. Your password is never saved by Rommayo.</small>
+          <label class="check"><input id="remember-login" type="checkbox" checked><span>Remember login on this device. Stores the session cookie, never your password. Uncheck to sign in after restarting the app.</span></label>
           <label class="check"><input id="consent" type="checkbox" required><span>I trust this server. I understand Rommayo provides no games or BIOS files, and I’m responsible for the content I access.</span></label>
           <div id="http-note" hidden>HTTP sends login details and games without encryption. Only use it on a network you trust.</div>
           <label class="check" id="http-consent-row" hidden><input id="http-consent" type="checkbox"><span>I understand and want to use this HTTP connection.</span></label>

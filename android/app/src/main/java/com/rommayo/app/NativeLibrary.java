@@ -126,15 +126,17 @@ final class NativeLibrary implements ControllerNavigation.Target, InputManager.I
         return (count == 0 ? "Touch or connect a controller" : count + " controller(s) connected") + "  ·  " + (controls.swap ? "B open · A back" : "A open · B back") + "  ·  LB/RB sections";
     }
     void login(String message) {
-        screen = "login"; frame("CONNECT", false);
+        endSession(); screen = "login"; frame("CONNECT", false);
         ScrollView scroll = new ScrollView(activity); LinearLayout form = column(); scroll.setFillViewport(true); scroll.addView(form); body.addView(scroll);
         add(form, text("Your library. Your devices.", 30, INK));
         add(form, text("Connect directly to your RomM server. Your password is used for sign-in; the app keeps the session cookie.", 16, MUTED));
         EditText address = field(form, "RomM URL or IP", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
-        try { JSONArray saved = new JSONArray(prefs.getString("servers", "[]")); if (saved.length() > 0) address.setText(saved.optString(0)); } catch (Exception ignored) {}
+        address.setText(prefs.getString("lastServer", activity.currentServer()));
         EditText user = field(form, "Username", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_NORMAL);
         EditText password = field(form, "Password", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         password.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
+        CheckBox remember = new CheckBox(activity); remember.setText("Remember login on this device"); remember.setTextColor(INK); remember.setChecked(prefs.getBoolean("rememberLogin", true)); add(form, remember);
+        add(form, text("Stores the session cookie, never your password. Uncheck to require sign-in after restarting the app.", 13, MUTED));
         CheckBox trust = new CheckBox(activity); trust.setText("I trust this server and only use content I am authorized to play."); trust.setTextColor(INK); add(form, trust);
         CheckBox http = new CheckBox(activity); http.setText("Allow unencrypted HTTP on my trusted local network."); http.setTextColor(INK); add(form, http);
         TextView error = text(message == null ? "" : message, 15, ACCENT); add(form, error);
@@ -146,6 +148,7 @@ final class NativeLibrary implements ControllerNavigation.Target, InputManager.I
                 if (normalized.startsWith("http:") && !http.isChecked()) throw new Exception("Confirm the unencrypted HTTP connection.");
                 String username = user.getText().toString(), secret = password.getText().toString();
                 if (username.isEmpty() || username.contains(":") || secret.isEmpty()) throw new Exception("Enter your RomM username and password.");
+                activity.beginSession(normalized, remember.isChecked());
                 if (api != null) api.close(); api = new RommApi(normalized); loading = true; error.setText("Signing in…");
                 api.login(username, secret, (result, issue) -> {
                     loading = false; password.setText("");
@@ -158,7 +161,7 @@ final class NativeLibrary implements ControllerNavigation.Target, InputManager.I
             try {
                 String normalized = ServerPolicy.normalize(address.getText().toString());
                 if (!trust.isChecked() || (normalized.startsWith("http:") && !http.isChecked())) { error.setText("Confirm server trust and HTTP if needed."); return; }
-                activity.rememberServer(normalized); if (api != null) api.close(); api = new RommApi(normalized); activity.openWeb("");
+                activity.beginSession(normalized, remember.isChecked()); if (api != null) api.close(); api = new RommApi(normalized); activity.openWeb("");
             } catch (Exception issue) { error.setText(issue.getMessage()); }
         }));
         add(form, text("Rommayo provides no games or BIOS files. Downloads from your server are at your own risk. Independent companion to RomM.", 13, MUTED));
@@ -166,8 +169,9 @@ final class NativeLibrary implements ControllerNavigation.Target, InputManager.I
     private EditText field(LinearLayout parent, String label, int type) {
         add(parent, text(label, 14, MUTED)); EditText view = new EditText(activity); view.setSingleLine(true); view.setInputType(type); view.setTextColor(INK); view.setTextSize(16); view.setMinHeight(dp(48)); view.setBackgroundTintList(android.content.res.ColorStateList.valueOf(ACCENT)); add(parent, view); return view;
     }
-    void restore(String address) { if (api != null) api.close(); api = new RommApi(address); activity.rememberServer(address); library(); }
-    private void connected(String address) { activity.rememberServer(address); platforms = new JSONArray(); query = ""; platform = -1; library(); }
+    void endSession() { cancelPage(); if (api != null) { api.close(); api = null; } games.clear(); platforms = new JSONArray(); }
+    void restore(String address) { if (api != null) api.close(); api = new RommApi(address);  library(); }
+    private void connected(String address) {  platforms = new JSONArray(); query = ""; platform = -1; library(); }
     void fromWeb() { if (api == null && !activity.currentServer().isEmpty()) api = new RommApi(activity.currentServer()); library(); }
     private void switchSection(String value) { hideKeyboard(); section = value; library(); }
     private void hideKeyboard() { View focus = activity.getCurrentFocus(); if (focus != null) ((InputMethodManager) activity.getSystemService(android.content.Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(focus.getWindowToken(), 0); }
@@ -278,12 +282,17 @@ final class NativeLibrary implements ControllerNavigation.Target, InputManager.I
         add(content, text("D-pad / left stick: move focus\n" + (controls.swap ? "B: open · A: back" : "A: open · B: back") + "\nX: search · Y: recent games\nLB / RB: Library, Recent, Settings\n\nThese mappings control native menus. In games, inputs pass directly to the web player; use its controller mapping screen. Connect USB or Bluetooth controllers through Android settings.", 15, MUTED));
         add(content, text("Server", 24, INK)); add(content, text(activity.currentServer(), 15, MUTED));
         add(content, button("Full RomM", () -> activity.openWeb("")));
+        add(content, text(prefs.getBoolean("rememberLogin", true) ? "Login is remembered on this device." : "Login lasts until the app restarts.", 14, MUTED));
+        add(content, button("Log out", () -> {
+            AlertDialog dialog = new AlertDialog.Builder(activity).setTitle("Log out of RomM?").setMessage("End this device’s session. Your local game saves and exported files are preserved.").setNegativeButton("Stay", null).setPositiveButton("Log out", (d, which) -> { activity.logOut(); loginProgress(); }).create(); controllerDialog(dialog); dialog.show();
+        }));
         add(content, button("Sign in again / switch server", () -> login(null)));
         add(content, button("Forget this device’s sessions", () -> {
             AlertDialog dialog = new AlertDialog.Builder(activity).setTitle("Forget saved sessions?").setMessage("Clear saved servers and session cookies on this device?").setNegativeButton("Cancel", null).setPositiveButton("Forget", (d, which) -> activity.forgetSessions()).create(); controllerDialog(dialog); dialog.show();
         }));
         content.getChildAt(1).requestFocus();
     }
+    private void loginProgress() { screen = "login"; frame("LOGGING OUT", false); add(body, text("Ending this device’s session…", 18, INK)); }
     private void toggle(LinearLayout content, String label, String key, boolean fallback, Runnable changed) {
         Switch view = new Switch(activity); view.setText(label); view.setTextColor(INK); view.setTextSize(16); view.setMinHeight(dp(52)); view.setPadding(dp(8), dp(4), dp(8), dp(4)); view.setBackground(focusBackground()); view.setChecked(prefs.getBoolean(key, fallback)); view.setOnCheckedChangeListener((v, value) -> { prefs.edit().putBoolean(key, value).apply(); changed.run(); }); add(content, view);
     }
