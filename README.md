@@ -117,9 +117,13 @@ I need help affording my AI token usage :) If Rommayo makes your setup a little 
 In Steam Deck **Desktop Mode**, open Konsole and run:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/quentinmayo/Rommayo/main/scripts/install.sh | bash -s -- --steam-deck
+curl -fsSL https://rommayo.quentinmayo.com/steam-deck.sh | bash
 ```
 
-For macOS or Linux desktop, use the same command without `-s -- --steam-deck`. [Read the installer](scripts/install.sh) before running it. It downloads the pinned packaged release, verifies its SHA-256 checksum, and installs into your own account without sudo. Game files and app profiles are preserved during updates. Windows users can use the installer in Downloads above.
+For macOS or Linux desktop: `curl -fsSL https://rommayo.quentinmayo.com/install.sh | bash`. [Read the installer](scripts/install.sh) before running it. It downloads the pinned packaged release, verifies its SHA-256 checksum, and installs into your own account without sudo. Game files and app profiles are preserved during updates. Windows users can use the installer in Downloads above.
 
 On Steam Deck, open **Steam → Games → Add a Non-Steam Game**, select **Rommayo**, then return to **Gaming Mode → Library → Non-Steam**. The generated launcher includes `--deck`; leave Proton/Compatibility disabled. This is a native Linux Electron app. Save/export progress before closing a game.
+
+[Follow the illustrated Steam Deck setup guide](docs/steam-deck.md).
+
+![Rommayo running on a real Steam Deck](docs/screenshots/steam-deck-connect.png)

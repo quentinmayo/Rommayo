@@ -1,15 +1,51 @@
-# Steam Deck
+# Steam Deck setup
 
-Rommayo ships as a Linux x64 AppImage and runs as a non-Steam game. It has no Steam store integration or Valve verification.
+[Illustrated Steam Deck guide](https://rommayo.quentinmayo.com/steam-deck) · [Downloads](https://rommayo.quentinmayo.com/#downloads)
 
-1. In Desktop Mode, download the Linux x64 AppImage from [Releases](https://github.com/quentinmayo/Rommayo/releases).
-2. Move it to a stable location, for example `~/Applications/Rommayo.AppImage`, and make it executable from Properties → Permissions, or `chmod +x ~/Applications/Rommayo.AppImage`.
-3. Open Steam → Games → Add a Non-Steam Game → Browse, and choose the AppImage.
-4. In its Steam properties, set launch options to `--deck` for fullscreen startup.
-5. Start Rommayo, connect your server, and use your existing RomM account.
+Rommayo is a Linux AppImage you add as a non-Steam game. It has no Steam store integration or Valve verification.
 
-Use a Steam Input layout with a mouse trackpad for library navigation; configure controller input in RomM's player for games. Rommayo leaves gameplay input to the browser engine and RomM. `F11` toggles fullscreen and `Esc` exposes the toolbar again. On Deck, map these to back buttons or use the Steam keyboard/menu. A touchscreen also works.
+## Install in Desktop Mode
 
-Use native Linux compatibility; do not force Proton for the AppImage. If the system lacks FUSE support, try `APPIMAGE_EXTRACT_AND_RUN=1` when launching from the terminal. Keep Chromium's sandbox enabled. Your server needs HTTPS for browser features that require a secure context.
+1. Open **STEAM → Power → Switch to Desktop**, then open **Konsole**.
+2. Run the dedicated Deck command:
 
-The x64 AppImage is packaged for Deck, but physical Steam Deck controller, suspend/resume and gameplay certification remain to be done. See [compatibility](compatibility.md).
+```sh
+curl -fsSL https://rommayo.quentinmayo.com/steam-deck.sh | bash
+```
+
+[Read the installer](../scripts/install.sh) before running it. The site bootstrap pins and verifies the installer source; the installer verifies the packaged release’s SHA-256. It needs no sudo, system unlock, FUSE installation, Node.js or npm. Rommayo connects to your own RomM server; the public website has no visitor login.
+
+The executable is `~/.local/share/rommayo/Rommayo.AppImage`, the launcher is `~/.local/bin/rommayo`, and an application menu entry is created. The launcher uses AppImage extraction and includes `--deck --ozone-platform=x11`.
+
+## Add it to Gaming Mode
+
+1. In Desktop Mode, open **Steam → Games → Add a Non-Steam Game to My Library**.
+2. Search for **Rommayo**, check it and choose **Add Selected Programs**. If missing, browse to `/home/deck/.local/bin/rommayo`.
+3. Open shortcut **Properties** and leave forced **Compatibility / Proton** disabled. No extra launch options are needed for the generated launcher.
+4. Choose **Return to Gaming Mode** on the desktop, then **Library → Non-Steam → Rommayo → Play**.
+
+![Select the installed launchers in Steam](screenshots/steam-deck-add-to-steam.png)
+
+![Rommayo connection screen on an actual Steam Deck](screenshots/steam-deck-connect.png)
+
+![Rommayo launched through Steam Gaming Mode](screenshots/steam-deck-gaming-mode.png)
+
+For a manual AppImage download, make it executable, add it to Steam and set Launch Options to `--deck --ozone-platform=x11`.
+
+## Connect and configure controls
+
+Enter the RomM URL/IP, username and password you already use. Acknowledge the server notice and HTTP notice if applicable. **Remember login** retains the cookie between app restarts; passwords are never saved. The desktop toolbar has **Log out**, which preserves local game saves. Press **Esc** to expose the toolbar if fullscreen hides it.
+
+The Deck launcher excludes `LD_PRELOAD` to prevent Steam’s injected overlay library from stalling Electron startup. It also selects XWayland. Steam’s system menu remains available.
+
+Use a Steam Input gamepad layout. Keep sticks, D-pad and face buttons assigned as gamepad inputs. For the connection form and file picker, configure **Right Trackpad → As Mouse**, with trackpad press or a trigger assigned to **Left Mouse Click**. **STEAM + X** opens the keyboard. Configure gameplay mapping in the RomM player’s **Control Settings**.
+
+If the on-screen keyboard duplicates a connected keyboard’s input, close it with **B / STEAM + X** before typing. For a RomM server on plain HTTP, gamepad APIs can be restricted; use trusted HTTPS or map Steam Input to the player’s keyboard controls.
+
+Save or export before leaving the player. Keep exported backups before clearing app data or moving devices. Close Rommayo before rerunning the installer to update; it preserves app profiles and keeps the previous AppImage as `Rommayo.AppImage.previous`.
+
+## Test evidence
+
+Physical Steam Deck testing on October 22, 2026 used a GLKVM and a docked 1920 × 1080 display. The checksum-verified installer, AppImage launch, live RomM login/library and C64 homebrew core boot were verified. Gaming Mode app launch was also verified after excluding Steam overlay injection. Gameplay and built-in controller results are tracked in [compatibility](compatibility.md). Universal core, controller and suspend/resume certification is not implied.
+
+Published screenshots redact private connection details and blur game artwork where it appears. No games, BIOS files or credentials are included in the repository.
