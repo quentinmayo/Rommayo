@@ -1,12 +1,15 @@
 {
   "name": "rommayo",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "private": true,
   "description": "Your whole RomM, wherever you play. Android, desktop and Steam Deck companion.",
   "author": "Quentin Mayo",
   "license": "MIT",
   "homepage": "https://github.com/quentinmayo/Rommayo",
-  "repository": { "type": "git", "url": "https://github.com/quentinmayo/Rommayo.git" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/quentinmayo/Rommayo.git"
+  },
   "main": "desktop/main.cjs",
   "scripts": {
     "start": "electron .",
@@ -28,11 +31,39 @@
     "appId": "com.rommayo.app",
     "productName": "Rommayo",
     "artifactName": "Rommayo-${version}-${os}-${arch}.${ext}",
-    "directories": { "output": "release" },
-    "files": ["desktop/**/*", "shared/**/*", "assets/icon.png", "LICENSE", "package.json"],
-    "linux": { "target": ["AppImage"], "category": "Game", "icon": "assets/icon.png" },
-    "win": { "target": ["nsis"], "icon": "assets/icon.png" },
-    "mac": { "target": ["dmg"], "category": "public.app-category.games", "icon": "assets/icon.png" },
-    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true }
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "desktop/**/*",
+      "shared/**/*",
+      "assets/icon.png",
+      "LICENSE",
+      "package.json"
+    ],
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Game",
+      "icon": "assets/icon.png"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "assets/icon.png"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.games",
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }

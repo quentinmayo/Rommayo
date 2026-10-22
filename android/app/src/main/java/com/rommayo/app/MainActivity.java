@@ -8,13 +8,12 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.Uri;
+import android.util.Base64;
 import android.os.Bundle;
 import android.os.Environment;
-import android.util.Base64;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
-import android.webkit.DownloadListener;
 import android.webkit.URLUtil;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -28,7 +27,6 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 import androidx.webkit.JavaScriptReplyProxy;
-import androidx.webkit.WebViewAssetLoader;
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
 import org.json.JSONArray;
@@ -37,20 +35,17 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends ComponentActivity {
-    private static final String SHELL_ORIGIN = "https://appassets.androidplatform.net";
     private static final int PICK_FILES = 41, SAVE_BLOB = 42;
-    private WebView shell, remote;
+    private WebView remote;
+    private NativeLibrary nativeLibrary;
+    private LinearLayout webToolbar;
     private LinearLayout root;
     private FrameLayout remoteContainer;
     private SharedPreferences preferences;
@@ -61,7 +56,7 @@ public class MainActivity extends ComponentActivity {
     private ValueCallback<Uri[]> fileCallback;
     private View customView;
     private WebChromeClient.CustomViewCallback customCallback;
-    private boolean fullscreen = false, connecting = false, steamTheme = true;
+    private boolean fullscreen = false, steamTheme = true;
     private String theme = "";
     private File blobFile;
     private OutputStream blobStream;
@@ -81,25 +76,16 @@ public class MainActivity extends ComponentActivity {
             view.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(), insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom()); return insets;
         });
         setContentView(root);
-        shell = new WebView(this); configure(shell); shell.setBackgroundColor(Color.rgb(16, 24, 34));
-        WebViewAssetLoader loader = new WebViewAssetLoader.Builder().addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this)).build();
-        shell.setWebViewClient(new WebViewClient() {
-            @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) { return loader.shouldInterceptRequest(request.getUrl()); }
-            @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) { return !SHELL_ORIGIN.equals(ServerPolicy.origin(request.getUrl().toString())); }
-        });
-        if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
-            new AlertDialog.Builder(this).setMessage("Please update Android System WebView or Chrome to use Rommayo.").setPositiveButton("Close", (d, w) -> finish()).show(); return;
-        }
-        WebViewCompat.addWebMessageListener(shell, "rommayoBridge", java.util.Collections.singleton(SHELL_ORIGIN), (view, message, origin, mainFrame, reply) -> {
-            if (!mainFrame || !SHELL_ORIGIN.equals(origin.toString())) return;
-            try { handle(new JSONObject(message.getData()), reply); } catch (Exception error) { reply.postMessage(state(error.getMessage()).toString()); }
-        });
-        root.addView(shell, new LinearLayout.LayoutParams(-1, -1));
         remoteContainer = new FrameLayout(this);
-        shell.loadUrl(SHELL_ORIGIN + "/assets/index.html");
         CookieManager.getInstance().setAcceptCookie(true);
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
+        nativeLibrary = new NativeLibrary(this, root, preferences);
+        if (servers.length() > 0) {
+            try { server = ServerPolicy.normalize(servers.optString(0)); nativeLibrary.restore(server); }
+            catch (Exception issue) { nativeLibrary.login(null); }
+        } else nativeLibrary.login(null);
     }
+
     private void configure(WebView view) {
         WebSettings settings = view.getSettings();
         settings.setJavaScriptEnabled(true); settings.setDomStorageEnabled(true);
@@ -110,83 +96,28 @@ public class MainActivity extends ComponentActivity {
         settings.setUseWideViewPort(true); settings.setLoadWithOverviewMode(true);
         view.setFocusable(true); view.setFocusableInTouchMode(true);
     }
-    private JSONObject state(String error) {
-        JSONObject result = new JSONObject();
-        try { result.put("connected", remote != null); result.put("server", server); result.put("servers", servers); if (error != null) result.put("error", error); } catch (Exception ignored) {}
-        return result;
-    }
-    private void notifyState(String error) {
-        if (shell == null || isDestroyed()) return;
-        shell.evaluateJavascript("window.rommayoState && window.rommayoState(" + state(error) + ");", null);
-        if (remote != null) shell.evaluateJavascript("document.getElementById('password').value='';", null);
-    }
-    private void handle(JSONObject command, JavaScriptReplyProxy reply) throws Exception {
-        switch (command.optString("type")) {
-            case "init": reply.postMessage(state(null).toString()); return;
-            case "connect": connect(command, reply); return;
-            case "back": if (remote != null && remote.canGoBack()) remote.goBack(); break;
-            case "home": if (remote != null) remote.loadUrl(server); break;
-            case "reload": if (remote != null) remote.reload(); break;
-            case "fullscreen": setFullscreen(!fullscreen); break;
-            case "disconnect": disconnect(); break;
-            case "forget":
-                new AlertDialog.Builder(this).setTitle("Forget saved sessions?").setMessage("Sign this app out of every saved server and clear its web data? Your server library is unchanged.")
-                    .setNegativeButton("Cancel", null).setPositiveButton("Forget", (d, w) -> {
-                        disconnect(); CookieManager.getInstance().removeAllCookies(done -> CookieManager.getInstance().flush());
-                        android.webkit.WebStorage.getInstance().deleteAllData(); shell.clearCache(true);
-                        servers = new JSONArray(); server = ""; preferences.edit().clear().apply(); notifyState(null);
-                    }).show(); return;
-            default: throw new Exception("Unknown command.");
-        }
-        reply.postMessage(state(null).toString());
-    }
-    private void connect(JSONObject command, JavaScriptReplyProxy reply) throws Exception {
-        if (connecting) throw new Exception("A connection is already in progress.");
-        String address = ServerPolicy.normalize(command.optString("server"));
-        if (!command.optBoolean("consent")) throw new Exception("Confirm that you trust this server and understand the content notice.");
-        if (address.startsWith("http:") && !command.optBoolean("allowHttp")) throw new Exception("Confirm the unencrypted HTTP connection.");
-        boolean webLogin = command.optBoolean("webLogin");
-        String username = command.optString("username"), password = command.optString("password");
-        if (!webLogin && (username.isEmpty() || password.isEmpty() || username.contains(":") || username.length() > 256 || password.length() > 4096)) throw new Exception("Enter your RomM username and password, or use RomM sign-in.");
-        steamTheme = command.optBoolean("steamTheme", true);
-        connecting = true;
-        worker.execute(() -> {
-            HttpURLConnection connection = null;
-            try {
-                List<String> cookies = null;
-                if (!webLogin) {
-                    connection = (HttpURLConnection) new URL(address + "api/login").openConnection();
-                    connection.setConnectTimeout(15000); connection.setReadTimeout(20000); connection.setInstanceFollowRedirects(false); connection.setRequestMethod("POST");
-                    connection.setRequestProperty("Authorization", "Basic " + Base64.encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8), Base64.NO_WRAP));
-                    int code = connection.getResponseCode();
-                    if (code < 200 || code > 299) throw new Exception(code == 401 || code == 403 ? "RomM rejected this username or password." : "RomM sign-in failed (HTTP " + code + "). Try RomM sign-in for SSO.");
-                    for (String key : connection.getHeaderFields().keySet()) if (key != null && key.equalsIgnoreCase("Set-Cookie")) cookies = connection.getHeaderFields().get(key);
-                    if (cookies == null || cookies.isEmpty()) throw new Exception("RomM did not return a session cookie. Try RomM sign-in.");
-                }
-                List<String> received = cookies;
-                runOnUiThread(() -> {
-                    connecting = false;
-                    if (isDestroyed()) return;
-                    CookieManager manager = CookieManager.getInstance();
-                    if (received == null) { openServer(address); reply.postMessage(state(null).toString()); }
-                    else {
-                        java.util.concurrent.atomic.AtomicInteger remaining = new java.util.concurrent.atomic.AtomicInteger(received.size());
-                        for (String cookie : received) manager.setCookie(address, cookie, done -> {
-                            if (remaining.decrementAndGet() == 0) { manager.flush(); openServer(address); reply.postMessage(state(null).toString()); }
-                        });
-                    }
-                });
-            } catch (Exception error) {
-                String message = error.getMessage() != null && error.getMessage().startsWith("RomM") ? error.getMessage() : "Could not reach RomM. Check the address, network and server certificate.";
-                runOnUiThread(() -> { connecting = false; if (!isDestroyed()) reply.postMessage(state(message).toString()); });
-            } finally { if (connection != null) connection.disconnect(); command.remove("password"); }
-        });
-    }
-    private void openServer(String address) {
-        disconnect(); server = address;
+    String currentServer() { return server; }
+    void rememberServer(String address) {
+        server = address;
         JSONArray recent = new JSONArray(); recent.put(address);
         for (int i = 0; i < servers.length() && recent.length() < 8; i++) if (!address.equals(servers.optString(i))) recent.put(servers.optString(i));
         servers = recent; preferences.edit().putString("servers", servers.toString()).apply();
+    }
+    void forgetSessions() {
+        closeWeb();
+        CookieManager.getInstance().removeAllCookies(done -> CookieManager.getInstance().flush());
+        android.webkit.WebStorage.getInstance().deleteAllData();
+        servers = new JSONArray(); server = ""; preferences.edit().remove("servers").apply(); nativeLibrary.login(null);
+    }
+    void openWeb(String path) {
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) { toast("Update Android System WebView or Chrome to use the player."); return; }
+        closeWeb(); nativeLibrary.suspend(); root.removeAllViews();
+        webToolbar = new LinearLayout(this);
+        android.widget.Button library = new android.widget.Button(this); library.setText("‹ Library"); library.setAllCaps(false); library.setOnClickListener(v -> confirmLeaveWeb());
+        android.widget.Button reload = new android.widget.Button(this); reload.setText("Reload"); reload.setAllCaps(false); reload.setOnClickListener(v -> remote.reload());
+        android.widget.Button full = new android.widget.Button(this); full.setText("Fullscreen"); full.setAllCaps(false); full.setOnClickListener(v -> setFullscreen(true));
+        webToolbar.addView(library, new LinearLayout.LayoutParams(0, dp(48), 1)); webToolbar.addView(reload); webToolbar.addView(full); root.addView(webToolbar);
+        String address = server;
         allowedOrigins.clear(); allowedOrigins.add(ServerPolicy.origin(address));
         remote = new WebView(this); configure(remote); remote.setBackgroundColor(Color.rgb(16, 24, 34));
         // This WebView has no general purpose native bridge. The download bridge is origin restricted and token gated.
@@ -209,7 +140,7 @@ public class MainActivity extends ComponentActivity {
             @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 if (!request.isForMainFrame()) return;
                 new AlertDialog.Builder(MainActivity.this).setTitle("Server unavailable").setMessage("Check your network and RomM server. You can retry or switch servers.")
-                    .setPositiveButton("Retry", (d, w) -> view.reload()).setNegativeButton("Switch server", (d, w) -> disconnect()).show();
+                    .setPositiveButton("Retry", (d, w) -> view.reload()).setNegativeButton("Switch server", (d, w) -> returnToLibrary()).show();
             }
         });
         remote.setWebChromeClient(new WebChromeClient() {
@@ -247,10 +178,9 @@ public class MainActivity extends ComponentActivity {
         });
         remote.setDownloadListener((url, agent, disposition, mime, length) -> download(url, agent, disposition, mime));
         remote.setKeepScreenOn(true);
-        shell.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(64)));
         root.addView(remoteContainer, new LinearLayout.LayoutParams(-1, 0, 1));
         remoteContainer.addView(remote, new FrameLayout.LayoutParams(-1, -1));
-        remote.loadUrl(address); remote.requestFocus(); notifyState(null);
+        remote.loadUrl(address + path); remote.requestFocus();
     }
     private void external(String url) {
         String origin = ServerPolicy.origin(url); if (origin.isEmpty()) { toast("This link type is not supported. Open it in a browser."); return; }
@@ -339,24 +269,43 @@ public class MainActivity extends ComponentActivity {
     private void setFullscreen(boolean value) {
         fullscreen = value;
         getWindow().getDecorView().setSystemUiVisibility(value ? View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY : View.SYSTEM_UI_FLAG_VISIBLE);
-        if (remote != null) shell.setVisibility(value ? View.GONE : View.VISIBLE);
+        if (webToolbar != null) webToolbar.setVisibility(value ? View.GONE : View.VISIBLE);
     }
-    private void disconnect() {
+    private void closeWeb() {
         hideCustomView(); setFullscreen(false); clearBlob();
         if (fileCallback != null) { fileCallback.onReceiveValue(null); fileCallback = null; }
         if (remote != null) { CookieManager.getInstance().flush(); remoteContainer.removeAllViews(); remote.destroy(); remote = null; }
-        root.removeView(remoteContainer); shell.setVisibility(View.VISIBLE); shell.setLayoutParams(new LinearLayout.LayoutParams(-1, -1)); notifyState(null);
+        root.removeView(remoteContainer); if (webToolbar != null) root.removeView(webToolbar); webToolbar = null;
     }
+    private void returnToLibrary() { closeWeb(); nativeLibrary.fromWeb(); }
+    private void confirmLeaveWeb() {
+        AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Return to your library?").setMessage("Save your game in the player before leaving. Unsaved progress may be lost.").setNegativeButton("Stay", null).setPositiveButton("Library", (d, w) -> returnToLibrary()).create(); nativeLibrary.controllerDialog(dialog); dialog.show();
+    }
+    void confirmExit() { AlertDialog dialog = new AlertDialog.Builder(this).setMessage("Close Rommayo?").setNegativeButton("Stay", null).setPositiveButton("Close", (d, w) -> finish()).create(); nativeLibrary.controllerDialog(dialog); dialog.show(); }
     private void handleBack() {
         if (customView != null) hideCustomView();
         else if (fullscreen) setFullscreen(false);
-        else if (remote != null && remote.canGoBack()) remote.goBack();
-        else if (remote != null) new AlertDialog.Builder(this).setMessage("Switch RomM servers?").setNegativeButton("Stay", null).setPositiveButton("Switch", (d, w) -> disconnect()).show();
-        else finish();
+        else if (remote != null) confirmLeaveWeb();
+        else nativeLibrary.back();
     }
-    @Override protected void onPause() { super.onPause(); CookieManager.getInstance().flush(); if (remote != null) remote.onPause(); }
+    // Activity's public input entry point must run before focused native widgets consume A/B.
+    // AndroidX core marks its implementation restricted even though this overrides Activity.
+    @android.annotation.SuppressLint("RestrictedApi")
+    @Override public boolean dispatchKeyEvent(android.view.KeyEvent event) {
+        if (remote == null && nativeLibrary != null && nativeLibrary.key(event)) return true;
+        return super.dispatchKeyEvent(event);
+    }
+    @Override public boolean dispatchGenericMotionEvent(android.view.MotionEvent event) {
+        if (remote == null && nativeLibrary != null && nativeLibrary.motion(event)) return true;
+        return super.dispatchGenericMotionEvent(event);
+    }
+    @Override public void onConfigurationChanged(android.content.res.Configuration config) {
+        super.onConfigurationChanged(config);
+        if (remote == null && nativeLibrary != null) nativeLibrary.configurationChanged();
+    }
+    @Override protected void onPause() { super.onPause(); if (nativeLibrary != null) nativeLibrary.stopInput(); CookieManager.getInstance().flush(); if (remote != null) remote.onPause(); }
     @Override protected void onResume() { super.onResume(); if (remote != null) remote.onResume(); }
-    @Override protected void onDestroy() { if (remote != null) remote.destroy(); if (shell != null) shell.destroy(); clearBlob(); worker.shutdown(); super.onDestroy(); }
+    @Override protected void onDestroy() { if (remote != null) remote.destroy(); if (nativeLibrary != null) nativeLibrary.close(); clearBlob(); worker.shutdown(); super.onDestroy(); }
     private static void copy(InputStream input, OutputStream output) throws java.io.IOException { byte[] buffer = new byte[65536]; int count; while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count); }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
     private void toast(String message) { Toast.makeText(this, message, Toast.LENGTH_LONG).show(); }

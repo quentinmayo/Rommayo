@@ -8,7 +8,9 @@
 
 **Your server. Your collection. Your next save point.**
 
-Rommayo brings your self-hosted [RomM](https://romm.app/) library to Android phones and tablets, desktop computers, Steam Deck, and a self-hosted web app. A Steam-inspired blue interface wraps the **actual RomM website**, so browsing, search, recently played, collections, game details, browser players, saves, and server administration stay in RomM's hands.
+[Explore the Rommayo website](https://rommayo.quentinmayo.com) · [Emulatormayo](https://emulatormayo.quentinmayo.com)
+
+Rommayo brings your self-hosted [RomM](https://romm.app/) library to Android phones and tablets, desktop computers, Steam Deck, and a self-hosted web app. Android now has a **native, Steam-inspired library**: cover art, search, platform filters, recents and game details, with touch and controller navigation. RomM's web players handle emulation; **Full RomM** provides collections, saves, metadata and administration. Desktop uses Electron with the actual RomM website.
 
 Enter your **server IP or URL, username, and password**. Rommayo signs into RomM and keeps the session cookie on your device. The wrapper does not save your password, and there is no Rommayo account or central service.
 
@@ -30,10 +32,12 @@ Steam Deck support means a **non-Steam application** you add to your library. Ro
 
 ## The whole library comes along
 
+- **Native Android library.** Android Views render sign-in, paged cover grids, search, platform filters, recents, details and settings directly from the RomM API.
+- **Controller-friendly menus.** D-pad/stick navigation, A/B actions, shoulder navigation, dead-zone and A/B swap settings, compact cards, landscape mode and a controller check screen. See the [Android handheld guide](docs/android-handhelds.md).
 - **Full RomM interface.** Use the same pages and permissions as your website, including features added by your server version.
 - **Your existing login.** Native username/password sign-in, or RomM's own sign-in page for SSO.
 - **Sessions that stick.** Cookies stay in the OS web engine's app storage. Switch servers without giving a central service your credentials.
-- **Blue library theme.** Deep navy surfaces, cyan accents and compact cards. Disable it on the connection screen to retain RomM's own appearance.
+- **Blue library theme.** Deep navy surfaces, cyan accents and compact cards. Desktop can disable the web theme on the connection screen. Android has a native blue library plus themed web players.
 - **Native files.** Uploads use your file picker. Desktop supports normal and blob downloads; Android uses Downloads or a save dialog for generated files.
 - **Room to play.** Fullscreen browser players, touch input and the web engine's gamepad support. No separate emulator binaries are bundled.
 - **Self-hosted web option.** One configured upstream, independent browser sessions, streaming uploads/downloads and WebSocket forwarding.
@@ -46,7 +50,9 @@ Steam Deck support means a **non-Steam application** you add to your library. Ro
 
 Your device must be able to reach your server. A private LAN IP needs the same network or a suitable VPN. HTTPS is recommended, especially for gamepad, WebRTC and other browser APIs that require a secure context. Certificate validation stays enabled.
 
-The app's toolbar provides **Back**, **Home**, **Reload**, **Fullscreen**, and **Switch server**. Leaving fullscreen on Android uses the system Back gesture. Desktop shortcuts: `F11` fullscreen, `Esc` exit fullscreen, `Alt+Left` back, and `Ctrl/Cmd+Shift+S` switch server.
+On Android, the native Library/Recent/Settings navigation moves to a side rail in landscape and a bottom bar on phones. The player toolbar returns to the native library after confirming that you have saved your progress. Menu controller mappings never intercept gameplay inputs.
+
+The desktop app's toolbar provides **Back**, **Home**, **Reload**, **Fullscreen**, and **Switch server**. Leaving fullscreen on Android uses the system Back gesture. Desktop shortcuts: `F11` fullscreen, `Esc` exit fullscreen, `Alt+Left` back, and `Ctrl/Cmd+Shift+S` switch server.
 
 ## Build it yourself
 
@@ -87,7 +93,7 @@ RomM handles emulation, metadata, server permissions, save behavior and game com
 ```text
 shared/    Original connection UI + optional RomM theme
 desktop/   Sandboxed Electron shell; separate cookie session per server origin
-android/   Native Android host; origin-restricted shell and separate RomM WebView
+android/   Native Android Views + direct RomM API; isolated WebView for players/Full RomM
 web/       Self-hosted, fixed-upstream streaming companion proxy
 tests/     Address policy, proxy behavior and desktop integration checks
 docs/      Setup, compatibility and release instructions
