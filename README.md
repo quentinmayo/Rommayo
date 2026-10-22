@@ -100,3 +100,7 @@ docs/      Setup, compatibility and release instructions
 ```
 
 See [security](SECURITY.md), [contributing](CONTRIBUTING.md), and the [MIT license](LICENSE). RomM is a separate [AGPL-3.0 project](https://github.com/rommapp/romm); its source and emulator components are not bundled here.
+
+## Support the developers ☕
+
+I need help affording my AI token usage :) If Rommayo makes your setup a little more fun, [buy the developers a coffee](https://buymeacoffee.com/quentinmayo). Always optional. Always appreciated. Rommayo stays free and open source.
