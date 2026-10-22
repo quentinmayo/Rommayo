@@ -118,6 +118,15 @@ async function connect(command) {
       return { action: 'deny' };
     });
     view.webContents.on('page-title-updated', (event, title) => { event.preventDefault(); window.setTitle(`${title || 'RomM'} · Rommayo`); });
+    view.webContents.on('will-prevent-unload', (event) => {
+      const choice = dialog.showMessageBoxSync(window, {
+        type: 'question', title: 'Leave this RomM page?',
+        message: 'Your game or unsaved changes may still be running.',
+        detail: 'Save in RomM before leaving if you want to keep your progress.',
+        buttons: ['Stay', 'Leave page'], defaultId: 0, cancelId: 0
+      });
+      if (choice === 1) event.preventDefault();
+    });
     view.webContents.on('enter-html-full-screen', () => { window.setFullScreen(true); layout(); });
     view.webContents.on('leave-html-full-screen', () => { if (!deck) window.setFullScreen(false); layout(); });
     view.webContents.on('render-process-gone', () => { if (remote === view) { closeRemote(); sendState('The web engine stopped. Reconnect to your server.'); } });

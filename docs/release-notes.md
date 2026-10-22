@@ -1,6 +1,8 @@
 Your whole RomM, wherever you press play.
 
-The first public alpha includes Android, Linux/Steam Deck, Windows, macOS Apple Silicon, and a self-hosted web companion. Connect with your RomM server URL, username and password, then use the full RomM website with an optional Steam-inspired blue theme. Passwords are not saved by the wrapper; native/browser cookies keep your session.
+The public alpha includes Android, Linux/Steam Deck, Windows, macOS Apple Silicon, and a self-hosted web companion. Connect with your RomM server URL, username and password, then use the full RomM website with an optional Steam-inspired blue theme. Passwords are not saved by the wrapper; native/browser cookies keep your session.
+
+Desktop navigation now shows a Stay / Leave confirmation when a running game or unsaved page blocks navigation, instead of silently ignoring Home or Reload.
 
 - Android: install the signed APK on Android 10+. Remove any earlier debug installation before switching to the release signing identity.
 - Steam Deck/Linux: use the x64 AppImage; add it as a non-Steam game with `--deck` launch options.

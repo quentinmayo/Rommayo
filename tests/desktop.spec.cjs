@@ -81,3 +81,18 @@ test('HTTP and blob downloads use native save handling', async () => {
   fs.unlinkSync(output); await remote.locator('#blob').click();
   await expect.poll(() => fs.existsSync(output)).toBe(true); expect(fs.readFileSync(output, 'utf8')).toBe('fixture save');
 });
+test('leaving an active game asks first and respects both stay and leave', async () => {
+  await fill(); await shellPage.locator('.connect-button').click(); const remote = await remotePage();
+  await remote.getByText('Collections', { exact: true }).click();
+  await remote.evaluate(() => { window.onbeforeunload = (event) => { event.preventDefault(); event.returnValue = ''; }; });
+  await app.evaluate(({ dialog, BrowserWindow }) => {
+    const win = BrowserWindow.getAllWindows()[0]; win.unloadPrompts = 0;
+    dialog.showMessageBoxSync = () => { win.unloadPrompts++; return 0; };
+  });
+  await shellPage.evaluate(() => window.rommayo.send({ type: 'home' }).catch(() => {}));
+  await expect(remote).toHaveURL(`${address}/collections`);
+  expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].unloadPrompts)).toBe(1);
+  await app.evaluate(({ dialog }) => { dialog.showMessageBoxSync = () => 1; });
+  await shellPage.evaluate(() => window.rommayo.send({ type: 'home' }));
+  await expect(remote).toHaveURL(`${address}/`);
+});
