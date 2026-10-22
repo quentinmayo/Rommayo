@@ -1,0 +1,15 @@
+services:
+  rommayo:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    ports:
+      - "8787:8787"
+    environment:
+      ROMMAYO_UPSTREAM: ${ROMMAYO_UPSTREAM:?Set ROMMAYO_UPSTREAM to your RomM URL}
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL

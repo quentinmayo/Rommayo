@@ -1,0 +1,60 @@
+/* Rommayo's optional Steam-inspired skin. Layout and application behavior belong to RomM. */
+html { color-scheme: dark; }
+body, .v-application { font-family: Arial, Helvetica, sans-serif !important; }
+.v-theme--dark, .v-theme--light {
+  --v-theme-background: 23, 29, 37 !important;
+  --v-theme-surface: 27, 40, 56 !important;
+  --v-theme-surface-bright: 42, 71, 94 !important;
+  --v-theme-surface-variant: 42, 71, 94 !important;
+  --v-theme-primary: 102, 192, 244 !important;
+  --v-theme-secondary: 62, 126, 167 !important;
+  --v-theme-on-background: 219, 226, 235 !important;
+  --v-theme-on-surface: 219, 226, 235 !important;
+  --v-theme-on-primary: 16, 28, 40 !important;
+}
+.v-application { background: linear-gradient(135deg, #1b2838 0%, #171d25 70%) !important; }
+.v-main { background: radial-gradient(ellipse at 25% 0%, #29465f55, transparent 65%); }
+.v-navigation-drawer { background: #171d25 !important; border-right: 1px solid #314356 !important; }
+.v-app-bar, .v-toolbar { background: #171d25 !important; border-bottom: 1px solid #314356 !important; }
+.v-card { border-radius: 6px !important; }
+.v-card--link:hover { box-shadow: 0 0 0 2px #66c0f4, 0 12px 28px #0006 !important; }
+.v-btn { border-radius: 4px !important; letter-spacing: .2px !important; text-transform: none !important; }
+.v-list-item--active { color: #66c0f4 !important; }
+.v-field { border-radius: 4px !important; }
+/* RomM 5.4's component system uses its own tokens alongside Vuetify. */
+.r-v2, .r-v2.r-v2-light, .r-v2.r-v2-dark {
+  color-scheme: dark !important;
+  --r-color-bg: #171d25 !important;
+  --r-color-bg-elevated: #213549 !important;
+  --r-color-surface: #263d53cc !important;
+  --r-color-surface-hover: #34546f !important;
+  --r-color-fg: #dbe2eb !important;
+  --r-color-fg-heading: #f1f6fc !important;
+  --r-color-fg-secondary: #c5d4e2 !important;
+  --r-color-fg-muted: #9db5ca !important;
+  --r-color-fg-faint: #819bb1 !important;
+  --r-color-fg-faint-hard: #34485d !important;
+  --r-color-border: #3a526866 !important;
+  --r-color-border-strong: #4e7290 !important;
+  --r-color-focus: #66c0f4 !important;
+  --r-color-panel: #1b2838fa !important;
+  --r-color-panel-border: #3a5268 !important;
+  --r-color-tooltip-bg: #101b28f5 !important;
+  --r-color-tooltip-border: #3a5268 !important;
+  --r-color-cover-placeholder: #22374c !important;
+  --r-color-cover-placeholder-bright: #2d4c66 !important;
+  --r-color-auth-glass: #1b2838dd !important;
+  --r-color-toast-bg: #172638fa !important;
+  --r-color-title-shadow: #0008 !important;
+  --r-color-brand-primary: #66c0f4 !important;
+  --r-color-brand-primary-hover: #99d8ff !important;
+  --r-color-brand-primary-pressed: #3a8fbe !important;
+  --r-color-brand-secondary: #98c4df !important;
+  --r-color-brand-accent: #66c0f4 !important;
+  --r-color-avatar-gradient: linear-gradient(135deg, #66c0f4, #245b87) !important;
+  --r-radius-card: 6px !important;
+  --r-radius-art: 4px !important;
+  --r-radius-pill: 6px !important;
+}
+.r-v2-nav-bar { background: #171d25e6 !important; border-bottom: 1px solid #34485d !important; }
+.r-v2-light .r-v2-bg__overlay, .r-v2-bg__overlay { background: linear-gradient(90deg, #171d25f0, #1b2838ba), linear-gradient(0deg, #171d25, #171d2580) !important; }

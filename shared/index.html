@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Rommayo · Your next save point</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header id="toolbar" hidden>
+    <button id="back" title="Back" aria-label="Back">←</button>
+    <button id="home" title="RomM home" aria-label="RomM home">⌂</button>
+    <button id="reload" title="Reload" aria-label="Reload">↻</button>
+    <span class="toolbar-brand">R<span class="mint">■</span>MMAYO</span>
+    <span id="server-label"></span>
+    <button id="fullscreen" title="Fullscreen (F11)" aria-label="Fullscreen">⛶</button>
+    <button id="switch" title="Switch server" aria-label="Switch server">☰</button>
+  </header>
+  <main id="onboarding">
+    <div class="topline"><span class="wordmark">R<span class="mint">■</span>MMAYO<span class="wordmark-dot">®</span></span><span class="edition">COMPANION / 001</span></div>
+    <div class="layout">
+      <section class="intro">
+        <div class="eyebrow"><span class="status-dot"></span> YOUR SERVER. YOUR COLLECTION.</div>
+        <h1>Your next<br>save point<span class="mint">.</span></h1>
+        <p class="lead">The whole RomM experience.<br>Wherever you press play.</p>
+        <div class="cartridge" aria-hidden="true"><div class="cart-ridges"></div><div class="cart-label"><span>ROMMAYO</span><strong>▶</strong><small>INSERT YOUR OWN ADVENTURE</small></div><div class="cart-bottom"></div></div>
+        <div class="platforms"><span>ANDROID</span><i>✦</i><span>DESKTOP</span><i>✦</i><span>STEAM DECK</span></div>
+      </section>
+      <section class="connect-panel">
+        <div class="panel-heading"><span class="step">01 / CONNECT</span><span class="tiny-chip">OPEN SOURCE</span></div>
+        <h2>Bring your library.</h2>
+        <p>Connect your RomM server, then sign in with your existing account. All your games, collections and settings are right where you left them.</p>
+        <form id="connect-form">
+          <label for="server">SERVER ADDRESS</label>
+          <input id="server" name="server" type="text" inputmode="url" autocomplete="url" spellcheck="false" placeholder="https://romm.example.com" required maxlength="2048">
+          <small class="hint">Use the same address you open in your browser. LAN addresses work too.</small>
+          <div class="credentials"><div><label for="username">USERNAME</label><input id="username" name="username" autocomplete="username" required maxlength="256"></div><div><label for="password">PASSWORD</label><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="4096"></div></div>
+          <small class="hint">Your session cookie stays on this device. Your password is never saved by Rommayo.</small>
+          <label class="check"><input id="consent" type="checkbox" required><span>I trust this server. I understand Rommayo provides no games or BIOS files, and I’m responsible for the content I access.</span></label>
+          <div id="http-note" hidden>HTTP sends login details and games without encryption. Only use it on a network you trust.</div>
+          <label class="check" id="http-consent-row" hidden><input id="http-consent" type="checkbox"><span>I understand and want to use this HTTP connection.</span></label>
+          <label class="check"><input id="steam-theme" type="checkbox" checked><span>Use the Rommayo blue library theme. Turn off to keep your server’s appearance.</span></label>
+          <button class="connect-button" type="submit"><span id="connect-text">Connect & sign in</span><span>↗</span></button>
+          <button id="web-login" type="button">Use RomM sign-in / single sign-on →</button>
+          <p id="error" role="alert" hidden></p>
+        </form>
+        <div id="saved-section" hidden><div class="saved-heading"><span>RECENT SERVERS</span><button id="forget" type="button">Forget sessions</button></div><div id="saved-servers"></div></div>
+        <div class="feature-row"><span>◈ Full web interface</span><span>◈ No account with us</span></div>
+      </section>
+    </div>
+    <footer><span>MADE FOR YOUR PERSONAL ROMM SERVER</span><span>Independent companion · Not affiliated with the RomM project</span></footer>
+    <p class="responsibility">No ROM sourcing or third-party download support. Use content you’re authorized to use. Downloads and use are at your own risk.</p>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

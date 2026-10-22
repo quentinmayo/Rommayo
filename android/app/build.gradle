@@ -1,0 +1,36 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.rommayo.app'
+    compileSdk 36
+    buildFeatures { buildConfig true }
+    defaultConfig {
+        applicationId 'com.rommayo.app'
+        minSdk 29
+        targetSdk 36
+        versionCode 1
+        versionName '0.1.0'
+    }
+    signingConfigs {
+        if (System.getenv('ROMMAYO_KEYSTORE')) {
+            release {
+                storeFile file(System.getenv('ROMMAYO_KEYSTORE'))
+                storePassword System.getenv('ROMMAYO_STORE_PASSWORD')
+                keyAlias System.getenv('ROMMAYO_KEY_ALIAS')
+                keyPassword System.getenv('ROMMAYO_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (System.getenv('ROMMAYO_KEYSTORE')) signingConfig signingConfigs.release
+        }
+    }
+    sourceSets.main.assets.srcDirs = ['../../shared']
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+dependencies {
+    implementation 'androidx.webkit:webkit:1.14.0'
+    implementation 'androidx.activity:activity:1.11.0'
+}

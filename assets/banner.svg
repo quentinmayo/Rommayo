@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="440" viewBox="0 0 1400 440">
+ <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#284b66"/><stop offset="1" stop-color="#101822"/></linearGradient><linearGradient id="blue"><stop stop-color="#66c0f4"/><stop offset="1" stop-color="#2876ae"/></linearGradient></defs>
+ <rect width="1400" height="440" rx="18" fill="url(#bg)"/>
+ <path d="M0 380L1400 90M0 420L1400 130M650 0L1150 440" stroke="#66c0f4" stroke-opacity=".07" stroke-width="2"/>
+ <text x="80" y="88" fill="#66c0f4" font-family="monospace" font-size="15" letter-spacing="3">ANDROID / DESKTOP / STEAM DECK / WEB</text>
+ <text x="73" y="222" fill="#eff6fc" font-family="Arial,sans-serif" font-size="112" font-weight="800" letter-spacing="-4">ROMMAYO<tspan fill="#66c0f4">.</tspan></text>
+ <text x="80" y="280" fill="#c2d5e5" font-family="Arial,sans-serif" font-size="27">Your whole RomM. Wherever you press play.</text>
+ <rect x="80" y="324" width="329" height="39" rx="3" fill="#101b28" stroke="#477392"/>
+ <text x="100" y="350" fill="#8ed4ff" font-family="monospace" font-size="13" letter-spacing="1">YOUR SERVER. YOUR COLLECTION.</text>
+ <g transform="translate(1090 75) rotate(12 90 140)"><rect x="8" y="13" width="196" height="276" rx="16" fill="#090f16"/><rect width="196" height="276" rx="16" fill="#2d475e" stroke="#5b85a2" stroke-width="3"/><path d="M20 22H176M20 29H176M20 36H176" stroke="#15283a" stroke-width="3"/><rect x="25" y="52" width="146" height="170" rx="5" fill="url(#blue)"/><text x="39" y="82" fill="#102333" font-family="monospace" font-size="16" font-weight="bold">ROMMAYO</text><path d="M77 110L127 143L77 176Z" fill="#132b3c"/><rect x="55" y="253" width="86" height="23" fill="#162b3c"/></g>
+</svg>
