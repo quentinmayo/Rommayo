@@ -3,14 +3,15 @@ const http = require('node:http');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-let fixture, address, app, shellPage, data;
+let fixture, address, app, shellPage, data, acceptedLogouts = 0;
 test.beforeAll(async () => {
   fixture = http.createServer((req, res) => {
     if (req.url === '/api/login') {
       if (req.headers.authorization !== `Basic ${Buffer.from('demo:demo').toString('base64')}`) { res.writeHead(401); return res.end('{}'); }
       res.setHeader('Set-Cookie', 'romm_session=fixture-session; HttpOnly; SameSite=Lax; Max-Age=86400; Path=/'); res.setHeader('Content-Type', 'application/json'); return res.end('{}');
     }
-    if (req.url === '/api/logout') { res.setHeader('Set-Cookie', 'romm_session=; Max-Age=0; Path=/'); return res.end('{}'); }
+    if (req.url === '/api/heartbeat') { res.setHeader('Set-Cookie', 'romm_csrftoken=test-csrf-token; Path=/'); return res.end('{}'); }
+    if (req.url === '/api/logout') { if (req.headers['x-csrftoken'] !== 'test-csrf-token') { res.writeHead(403); return res.end('CSRF token verification failed'); } acceptedLogouts++; res.setHeader('Set-Cookie', 'romm_session=; Max-Age=0; Path=/'); return res.end('{}'); }
     if (req.url === '/fixture-download') { res.setHeader('Content-Disposition', 'attachment; filename="fixture.txt"'); return res.end('authorized fixture content'); }
     res.setHeader('Content-Type', 'text/html');
     if (!req.headers.cookie?.includes('romm_session=fixture-session')) return res.end('<h1>RomM sign-in</h1>');
@@ -116,7 +117,9 @@ test('logout respects cancellation and clears authentication without deleting ga
   await app.evaluate(({dialog}) => { dialog.showMessageBox = async () => ({response:0}); });
   await shellPage.locator('#logout').click(); await expect(remote.locator('h1')).toHaveText('My RomM library');
   await app.evaluate(({dialog}) => { dialog.showMessageBox = async () => ({response:1}); });
+  const before = acceptedLogouts;
   await shellPage.locator('#logout').click(); await expect(shellPage.locator('#onboarding')).toBeVisible();
+  expect(acceptedLogouts).toBe(before + 1);
   await expect(shellPage.locator('.saved-server')).toHaveCount(0);
   await shellPage.locator('#web-login').click(); remote = await remotePage();
   await expect(remote.locator('h1')).toHaveText('RomM sign-in');

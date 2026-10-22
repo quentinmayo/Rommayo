@@ -38,11 +38,22 @@ function createServer(config) {
       if (req.method === 'POST' && route === '/__rommayo/logout') {
         if (!req.headers.origin || new URL(req.headers.origin).host !== req.headers.host || !req.headers['content-type']?.startsWith('application/json')) return json(res, 403, { error: 'Open Rommayo directly to log out.' });
         req.resume();
+        const csrf = (req.headers.cookie || '').split(';').map(value => value.trim()).find(value => value.startsWith('romm_csrftoken='))?.slice('romm_csrftoken='.length);
         const expired = (req.headers.cookie || '').split(';').map(value => value.split('=')[0].trim()).filter(name => /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(name)).map(name => `${name}=; Max-Age=0; Path=/; SameSite=Lax; HttpOnly`);
         let finished = false;
         const finish = () => { if (finished) return; finished = true; res.setHeader('Set-Cookie', expired); json(res, 200, { redirect: '/__rommayo/' }); };
-        const logout = transport.request(new URL('/api/logout', upstream), { method: 'POST', headers: { Cookie: req.headers.cookie || '', 'Content-Length': '0' }, timeout: 10000 }, response => { response.resume(); response.on('end', finish); });
-        logout.on('timeout', () => logout.destroy()); logout.on('error', finish); logout.end(); return;
+        // Match RomM’s own client: refresh a user-bound CSRF cookie before POST.
+        const heartbeat = transport.request(new URL('/api/heartbeat', upstream), { headers: { Cookie: req.headers.cookie || '' }, timeout: 10000 }, response => {
+          response.resume();
+          response.on('end', () => {
+            const cookieMap = new Map((req.headers.cookie || '').split(';').map(value => { const index = value.indexOf('='); return [value.slice(0, index).trim(), value.slice(index + 1)]; }).filter(([name]) => name));
+            for (const value of response.headers['set-cookie'] || []) { const item = value.split(';')[0], index = item.indexOf('='); cookieMap.set(item.slice(0, index), item.slice(index + 1)); }
+            const token = cookieMap.get('romm_csrftoken') || csrf;
+            const logout = transport.request(new URL('/api/logout', upstream), { method: 'POST', headers: { Cookie: [...cookieMap].map(([name, value]) => `${name}=${value}`).join('; '), ...(token ? { 'x-csrftoken': token } : {}), 'Content-Length': '0' }, timeout: 10000 }, result => { result.resume(); result.on('end', finish); });
+            logout.on('timeout', () => logout.destroy()); logout.on('error', finish); logout.end();
+          });
+        });
+        heartbeat.on('timeout', () => heartbeat.destroy()); heartbeat.on('error', finish); heartbeat.end(); return;
       }
       if (req.method === 'POST' && route === '/__rommayo/connect') {
         try {

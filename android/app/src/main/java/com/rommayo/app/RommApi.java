@@ -33,7 +33,9 @@ final class RommApi {
     String server;
     RommApi(String server) { this.server = server; }
     void get(String path, Result result) { request(path, null, false, result); }
-    void logout(Result result) { request("api/logout", null, true, result); }
+    void logout(Result result) {
+        get("api/heartbeat", (body, error) -> { if (error != null) result.complete(null, error); else request("api/logout", null, true, result); });
+    }
     void login(String user, String password, Result result) {
         request("api/login", Base64.encodeToString((user + ":" + password).getBytes(StandardCharsets.UTF_8), Base64.NO_WRAP), true, result);
     }
@@ -44,7 +46,12 @@ final class RommApi {
             HttpURLConnection connection = null;
             try {
                 connection = open(address, cookie);
-                if (post) connection.setRequestMethod("POST");
+                if (post) {
+                    connection.setRequestMethod("POST");
+                    if (basic == null && cookie != null) for (String value : cookie.split(";")) {
+                        String item = value.trim(); if (item.startsWith("romm_csrftoken=")) connection.setRequestProperty("x-csrftoken", item.substring("romm_csrftoken=".length()));
+                    }
+                }
                 if (basic != null) connection.setRequestProperty("Authorization", "Basic " + basic);
                 int code = connection.getResponseCode();
                 if (code < 200 || code >= 300) throw new ApiError(code == 401 || code == 403 ? "Your session expired or sign-in was rejected. Sign in again, or use Full RomM for SSO." : "RomM returned HTTP " + code + ". Retry or open Full RomM.");
