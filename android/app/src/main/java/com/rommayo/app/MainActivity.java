@@ -106,7 +106,7 @@ public class MainActivity extends ComponentActivity {
     void forgetSessions() {
         closeWeb();
         CookieManager.getInstance().removeAllCookies(done -> CookieManager.getInstance().flush());
-        android.webkit.WebStorage.getInstance().deleteAllData();
+        // Forget authentication without deleting browser-local game saves or states.
         servers = new JSONArray(); server = ""; preferences.edit().remove("servers").apply(); nativeLibrary.login(null);
     }
     void openWeb(String path) {
