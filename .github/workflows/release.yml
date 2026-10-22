@@ -36,7 +36,7 @@ jobs:
       - run: npm run dist -- ${{ matrix.target }}
       - name: Verify macOS bundle signature
         if: runner.os == 'macOS'
-        run: find release -maxdepth 2 -name '*.app' -exec codesign --verify --deep --strict {} \;
+        run: for bundle in release/*/*.app; do codesign --verify --deep --strict "$bundle"; done
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.name }}
