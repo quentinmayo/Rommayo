@@ -1,6 +1,6 @@
 {
   "name": "rommayo",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "description": "Your whole RomM, wherever you play. Android, desktop and Steam Deck companion.",
   "author": "Quentin Mayo",
@@ -59,7 +59,8 @@
         "dmg"
       ],
       "category": "public.app-category.games",
-      "icon": "assets/icon.png"
+      "icon": "assets/icon.png",
+      "identity": "-"
     },
     "nsis": {
       "oneClick": false,
