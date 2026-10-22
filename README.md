@@ -18,15 +18,22 @@ Enter your **server IP or URL, username, and password**. Rommayo signs into RomM
 
 <p align="center"><img src="docs/screenshots/desktop-connect.png" alt="Rommayo's blue desktop connection screen" width="900"></p>
 
+## Download & install
+
+**No Node.js, npm or development server required.** Download the installer for your device below, then connect to your existing RomM server. These are the v0.2.1 public alpha packages.
+
 ## Pick your screen
 
 | Device | Edition | Start here |
 | --- | --- | --- |
-| Android phone / tablet | Signed APK · Android 10+ | [Download releases](https://github.com/quentinmayo/Rommayo/releases) |
-| Steam Deck / Linux x64 | AppImage · fullscreen mode | [Steam Deck guide](docs/steam-deck.md) |
-| Windows x64 | Desktop installer | [Download releases](https://github.com/quentinmayo/Rommayo/releases) |
-| macOS Apple Silicon | Desktop disk image | [Download releases](https://github.com/quentinmayo/Rommayo/releases) |
+| Android phone / tablet | Signed APK · Android 10+ | [Download APK](https://github.com/quentinmayo/Rommayo/releases/download/v0.2.1/Rommayo-v0.2.1-android.apk) |
+| Steam Deck / Linux x64 | AppImage · fullscreen mode | [Download AppImage](https://github.com/quentinmayo/Rommayo/releases/download/v0.2.1/Rommayo-0.2.1-linux-x86_64.AppImage) · [Deck guide](docs/steam-deck.md) |
+| Windows x64 | Desktop installer | [Download Windows installer](https://github.com/quentinmayo/Rommayo/releases/download/v0.2.1/Rommayo-0.2.1-win-x64.exe) |
+| macOS Apple Silicon | Desktop disk image | [Download Apple Silicon DMG](https://github.com/quentinmayo/Rommayo/releases/download/v0.2.1/Rommayo-0.2.1-mac-arm64.dmg) |
+| macOS Intel | Desktop disk image | [Download Intel DMG](https://github.com/quentinmayo/Rommayo/releases/download/v0.2.1/Rommayo-0.2.1-mac-x64.dmg) |
 | Browser | Self-hosted web companion | [Web / Docker guide](docs/web.md) |
+
+Verify downloads with [SHA256SUMS.txt](https://github.com/quentinmayo/Rommayo/releases/download/v0.2.1/SHA256SUMS.txt). The website is [rommayo.quentinmayo.com](https://rommayo.quentinmayo.com); the commands in “Build it yourself” are only for contributors.
 
 Steam Deck support means a **non-Steam application** you add to your library. Rommayo is not listed on the Steam store, Steam Verified, or affiliated with Valve.
 
