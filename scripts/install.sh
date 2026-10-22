@@ -67,7 +67,10 @@ else
   mv "$WORK/$ASSET" "$TARGET"
   LAUNCHER="$PREFIX/bin/$SLUG"
   {
-    printf '#!/usr/bin/env bash\nset -e\nexport APPIMAGE_EXTRACT_AND_RUN=1\nexec '
+    printf '#!/usr/bin/env bash\nset -e\nexport APPIMAGE_EXTRACT_AND_RUN=1\n'
+    # Steam's injected overlay library stalls Electron startup on the tested Deck.
+    if [ "$DECK" = 1 ]; then printf 'unset LD_PRELOAD\n'; fi
+    printf 'exec '
     printf '%q ' "$TARGET"
     if [ "$DECK" = 1 ]; then printf '%s ' '--ozone-platform=x11' '--deck'; fi
     printf '"$@"\n'
