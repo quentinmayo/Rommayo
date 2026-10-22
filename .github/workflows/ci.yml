@@ -17,6 +17,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run test:install
+      - run: python3 scripts/test-steam-artwork.py
       - run: xvfb-run -a npm run test:desktop
   android:
     runs-on: ubuntu-latest

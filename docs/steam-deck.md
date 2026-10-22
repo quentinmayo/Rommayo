@@ -55,3 +55,13 @@ Save or export before leaving the player. Keep exported backups before clearing 
 Physical Steam Deck testing on October 22, 2026 used a GLKVM and a docked 1920 × 1080 display. The checksum-verified installer, AppImage launch, live RomM login/library and C64 homebrew core boot were verified. Gaming Mode app launch was also verified after excluding Steam overlay injection. Gameplay and built-in controller results are tracked in [compatibility](compatibility.md). Universal core, controller and suspend/resume certification is not implied.
 
 Published screenshots redact private connection details and blur game artwork where it appears. No games, BIOS files or credentials are included in the repository.
+
+## Steam artwork, remembered sessions and exit controls
+
+The Deck installer includes original icons, portrait/landscape covers, hero and logo art. For Steam to retain shortcut changes, fully exit Steam in Desktop Mode (**Steam → Exit**), then run `~/.local/bin/rommayo-steam-artwork`. Reopen Steam afterward. The helper adds the shortcut if missing, preserves existing app IDs and controller settings, and backs up changed shortcut/art files beside the originals with a `.mayo-backup-...` suffix. It refuses to edit shortcuts while Steam is running.
+
+During Deck gameplay the original EmulatorJS toolbar stays visible and clickable. The separate bottom bar has navigation, Fullscreen and **Quit app**. **Game controls** offers labeled shortcuts to the existing player actions. Open it with touch, **F10**, or **L3 + R3** on a standard gamepad; use D-pad to move, A to select, B to close. Save/load/import/export still use the player’s own handlers. Unsupported engines show a message instead of pretending an action succeeded.
+
+Save/export before leaving. **Quit app** asks before closing; alternatively press **STEAM → Exit game** and confirm. Quitting does not save automatically or log you out. If the player itself is in HTML fullscreen, its toolbar remains available; use Steam’s system menu to exit the app.
+
+With **Remember login** checked, Rommayo now automatically reopens the last server at startup using its cookie and saved theme choice. Your password is never stored. An expired session shows RomM’s sign-in page. **Log out**, **Forget sessions**, switching servers, or an unchecked login stops automatic reopening. Android already restores remembered sessions.
