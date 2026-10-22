@@ -24,7 +24,14 @@ function render(state) {
   for (const server of state.servers || []) {
     const button = document.createElement('button');
     button.className = 'saved-server'; button.textContent = server;
-    button.addEventListener('click', () => { $('server').value = server; $('http-consent').checked = false; updateHttp(); $('consent').focus(); });
+    button.title = state.configuredServer ? 'Select server' : 'Open saved session';
+    button.addEventListener('click', () => {
+      $('server').value = server; updateHttp();
+      if (state.configuredServer) { $('consent').focus(); return; }
+      // A native recent server was saved only after the user acknowledged its notices.
+      $('consent').checked = true; $('http-consent').checked = /^http:\/\//i.test(server);
+      connect(true);
+    });
     $('saved-servers').append(button);
   }
   if (state.error) showError(state.error);

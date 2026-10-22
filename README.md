@@ -42,7 +42,7 @@ Steam Deck support means a **non-Steam application** you add to your library. Ro
 
 1. Run your own [RomM server](https://docs.romm.app/latest/getting-started/quick-start-guide/).
 2. Install Rommayo and enter the same URL or IP you use in your browser. Include `http://` explicitly for an unencrypted LAN server; addresses without a scheme use HTTPS.
-3. Enter your RomM username and password, acknowledge the server notice, and connect. To resume an existing session or use SSO, choose **Use RomM sign-in**.
+3. Enter your RomM username and password, acknowledge the server notice, and connect. Later, tap a recent server to resume its saved session. For SSO or an expired session, use RomM's own sign-in.
 
 Your device must be able to reach your server. A private LAN IP needs the same network or a suitable VPN. HTTPS is recommended, especially for gamepad, WebRTC and other browser APIs that require a secure context. Certificate validation stays enabled.
 

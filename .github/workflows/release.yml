@@ -48,6 +48,9 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
       - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
       - uses: gradle/actions/setup-gradle@v4
       - name: Restore release key
@@ -93,4 +96,8 @@ jobs:
         run: |
           cd artifacts
           sha256sum * > SHA256SUMS.txt
-          gh release create "$GITHUB_REF_NAME" ./* --repo "$GITHUB_REPOSITORY" --title "Rommayo $GITHUB_REF_NAME · Public Alpha" --prerelease --notes-file ../docs/release-notes.md
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" ./* --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" ./* --repo "$GITHUB_REPOSITORY" --title "Rommayo $GITHUB_REF_NAME · Public Alpha" --prerelease --notes-file ../docs/release-notes.md
+          fi

@@ -66,8 +66,7 @@ test('session cookies survive app restart and server passwords are not needed ag
   await app.close();
   app = await _electron.launch({ args: [...(process.env.CI ? ['--no-sandbox'] : []), path.join(__dirname, '..')], env: { ...process.env, ROMMAYO_USER_DATA_DIRECTORY: data } });
   shellPage = await app.firstWindow(); await shellPage.locator('.saved-server').click();
-  await shellPage.locator('#consent').check(); await shellPage.locator('#http-consent').check();
-  await shellPage.locator('#web-login').click(); const remote = await remotePage();
+  const remote = await remotePage();
   await expect(remote.locator('h1')).toHaveText('My RomM library');
 });
 test('HTTP and blob downloads use native save handling', async () => {
