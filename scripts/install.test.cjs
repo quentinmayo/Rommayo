@@ -27,7 +27,7 @@ test('verified Steam Deck install needs no sudo and preserves arguments and prof
  const result=run(['--steam-deck']);assert.equal(result.status,0,result.stderr);
  const launcher=path.join(prefix,'bin',slug),entry=fs.readFileSync(path.join(prefix,'share','applications',slug+'.desktop'),'utf8');
  assert.match(entry,new RegExp(`Name=${app}`));assert.ok(entry.includes('Exec="'+launcher+'"'));
- assert.equal(spawnSync(launcher,['a file with spaces'],{encoding:'utf8'}).stdout,'--deck\na file with spaces\n');
+ assert.equal(spawnSync(launcher,['a file with spaces'],{encoding:'utf8'}).stdout,'--ozone-platform=x11\n--deck\na file with spaces\n');
  const profile=path.join(prefix,'share',slug,'test-profile');fs.writeFileSync(profile,'keep-progress');
  assert.equal(run(['--steam-deck']).status,0);assert.equal(fs.readFileSync(profile,'utf8'),'keep-progress');
  assert.ok(fs.existsSync(path.join(prefix,'share',slug,app+'.AppImage.previous')));

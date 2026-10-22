@@ -69,7 +69,7 @@ else
   {
     printf '#!/usr/bin/env bash\nset -e\nexport APPIMAGE_EXTRACT_AND_RUN=1\nexec '
     printf '%q ' "$TARGET"
-    if [ "$DECK" = 1 ]; then printf '%s ' '--deck'; fi
+    if [ "$DECK" = 1 ]; then printf '%s ' '--ozone-platform=x11' '--deck'; fi
     printf '"$@"\n'
   } > "$LAUNCHER"
   chmod 755 "$LAUNCHER"
