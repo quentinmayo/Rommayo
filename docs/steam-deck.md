@@ -30,7 +30,13 @@ The executable is `~/.local/share/rommayo/Rommayo.AppImage`, the launcher is `~/
 
 ![Rommayo launched through Steam Gaming Mode](screenshots/steam-deck-gaming-mode.png)
 
-For a manual AppImage download, make it executable, add it to Steam and set Launch Options to `--deck --ozone-platform=x11`.
+For a manual AppImage download, make it executable and add the AppImage itself to Steam. Set its **Launch Options** to:
+
+```sh
+env -u LD_PRELOAD APPIMAGE_EXTRACT_AND_RUN=1 %command% --deck --ozone-platform=x11
+```
+
+This enables extraction without FUSE, selects XWayland and excludes the overlay library. Use this only for a shortcut targeting the AppImage directly; the generated installer launcher already handles it.
 
 ## Connect and configure controls
 
