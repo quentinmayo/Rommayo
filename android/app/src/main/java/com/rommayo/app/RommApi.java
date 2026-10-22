@@ -32,18 +32,20 @@ final class RommApi {
     private volatile boolean closed;
     String server;
     RommApi(String server) { this.server = server; }
-    void get(String path, Result result) { request(path, null, result); }
+    void get(String path, Result result) { request(path, null, false, result); }
+    void logout(Result result) { request("api/logout", null, true, result); }
     void login(String user, String password, Result result) {
-        request("api/login", Base64.encodeToString((user + ":" + password).getBytes(StandardCharsets.UTF_8), Base64.NO_WRAP), result);
+        request("api/login", Base64.encodeToString((user + ":" + password).getBytes(StandardCharsets.UTF_8), Base64.NO_WRAP), true, result);
     }
-    private void request(String path, String basic, Result result) {
+    private void request(String path, String basic, boolean post, Result result) {
         String address = server + path;
-        String cookie = CookieManager.getInstance().getCookie(address);
+        String cookie = basic == null ? CookieManager.getInstance().getCookie(address) : null;
         requests.execute(() -> {
             HttpURLConnection connection = null;
             try {
                 connection = open(address, cookie);
-                if (basic != null) { connection.setRequestMethod("POST"); connection.setRequestProperty("Authorization", "Basic " + basic); }
+                if (post) connection.setRequestMethod("POST");
+                if (basic != null) connection.setRequestProperty("Authorization", "Basic " + basic);
                 int code = connection.getResponseCode();
                 if (code < 200 || code >= 300) throw new ApiError(code == 401 || code == 403 ? "Your session expired or sign-in was rejected. Sign in again, or use Full RomM for SSO." : "RomM returned HTTP " + code + ". Retry or open Full RomM.");
                 String body;

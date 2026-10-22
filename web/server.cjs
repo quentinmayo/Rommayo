@@ -14,7 +14,7 @@ function createServer(config) {
   const shared = path.join(__dirname, '..', 'shared');
   const assets = path.join(__dirname, '..', 'assets');
   const json = (res, code, data) => { res.writeHead(code, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(data)); };
-  const cookieHeaders = (cookies) => (cookies || []).map((value) => value.replace(/;\s*Domain=[^;]+/gi, ''));
+  const cookieHeaders = (cookies, remember = true) => (cookies || []).map(value => { const local = value.replace(/;\s*Domain=[^;]+/gi, ''); return remember ? local : local.replace(/;\s*(?:Max-Age|Expires)=[^;]+/gi, ''); });
   function headers(req) {
     const values = { ...req.headers, host: upstream.host, 'accept-encoding': 'identity' };
     // RomM sees the same origin it would see without the companion proxy.
@@ -24,9 +24,9 @@ function createServer(config) {
     delete values['x-forwarded-host']; delete values['x-forwarded-proto']; delete values['x-forwarded-for'];
     return values;
   }
-  function responseHeaders(response) {
+  function responseHeaders(response, req) {
     const values = { ...response.headers };
-    if (values['set-cookie']) values['set-cookie'] = cookieHeaders(values['set-cookie']);
+    if (values['set-cookie']) values['set-cookie'] = cookieHeaders(values['set-cookie'], !/(?:^|;\s*)rommayo_remember=0(?:;|$)/.test(req.headers.cookie || ''));
     if (values.location?.startsWith(upstream.origin + '/')) values.location = values.location.slice(upstream.origin.length);
     return values;
   }
@@ -35,6 +35,15 @@ function createServer(config) {
     if (route.startsWith('/__rommayo/')) {
       res.setHeader('Cache-Control', 'no-store');
       if (req.method === 'GET' && route === '/__rommayo/config') return json(res, 200, { connected: false, servers: [upstream.href], configuredServer: upstream.href });
+      if (req.method === 'POST' && route === '/__rommayo/logout') {
+        if (!req.headers.origin || new URL(req.headers.origin).host !== req.headers.host || !req.headers['content-type']?.startsWith('application/json')) return json(res, 403, { error: 'Open Rommayo directly to log out.' });
+        req.resume();
+        const expired = (req.headers.cookie || '').split(';').map(value => value.split('=')[0].trim()).filter(name => /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(name)).map(name => `${name}=; Max-Age=0; Path=/; SameSite=Lax; HttpOnly`);
+        let finished = false;
+        const finish = () => { if (finished) return; finished = true; res.setHeader('Set-Cookie', expired); json(res, 200, { redirect: '/__rommayo/' }); };
+        const logout = transport.request(new URL('/api/logout', upstream), { method: 'POST', headers: { Cookie: req.headers.cookie || '', 'Content-Length': '0' }, timeout: 10000 }, response => { response.resume(); response.on('end', finish); });
+        logout.on('timeout', () => logout.destroy()); logout.on('error', finish); logout.end(); return;
+      }
       if (req.method === 'POST' && route === '/__rommayo/connect') {
         try {
           // Prevent a different website from posting credentials or changing this browser's session.
@@ -46,12 +55,14 @@ function createServer(config) {
           if (normalizeServer(command.server) !== upstream.href) return json(res, 400, { error: 'This web edition connects only to the server configured by its operator.' });
           if (command.consent !== true || (upstream.protocol === 'http:' && command.allowHttp !== true)) return json(res, 400, { error: 'Confirm the server and connection notices.' });
           const skin = `rommayo_theme=${command.steamTheme === false ? '0' : '1'}; Path=/; SameSite=Lax; HttpOnly; Max-Age=31536000`;
-          if (command.webLogin) { res.setHeader('Set-Cookie', skin); return json(res, 200, { redirect: '/' }); }
+          const remember = command.rememberLogin !== false;
+          const memory = `rommayo_remember=${remember ? '1' : '0'}; Path=/; SameSite=Lax; HttpOnly${remember ? '; Max-Age=31536000' : ''}`;
+          if (command.webLogin) { res.setHeader('Set-Cookie', [skin, memory]); return json(res, 200, { redirect: '/' }); }
           if (typeof command.username !== 'string' || !command.username || command.username.includes(':') || command.username.length > 256 || typeof command.password !== 'string' || !command.password || command.password.length > 4096) return json(res, 400, { error: 'Enter your RomM username and password.' });
           const login = transport.request(new URL('/api/login', upstream), { method: 'POST', headers: { Authorization: `Basic ${Buffer.from(command.username + ':' + command.password).toString('base64')}`, 'Content-Length': '0' }, timeout: 20000 }, (response) => {
             response.resume();
             if (response.statusCode !== 200) return json(res, response.statusCode === 401 ? 401 : 502, { error: 'RomM sign-in failed. Check your credentials, or use RomM sign-in for SSO.' });
-            res.setHeader('Set-Cookie', [...cookieHeaders(response.headers['set-cookie']), skin]); json(res, 200, { redirect: '/' });
+            res.setHeader('Set-Cookie', [...cookieHeaders(response.headers['set-cookie'], remember), skin, memory]); json(res, 200, { redirect: '/' });
           });
           login.on('timeout', () => login.destroy()); login.on('error', () => { if (!res.headersSent) json(res, 502, { error: 'Could not reach RomM. Check the upstream server.' }); }); login.end();
           command.password = '';
@@ -63,7 +74,7 @@ function createServer(config) {
       }
       const files = {
         '/__rommayo/': ['index.html', 'text/html'], '/__rommayo/index.html': ['index.html', 'text/html'],
-        '/__rommayo/app.js': ['app.js', 'text/javascript'], '/__rommayo/style.css': ['style.css', 'text/css'],
+        '/__rommayo/session.js': ['session.js', 'text/javascript'], '/__rommayo/app.js': ['app.js', 'text/javascript'], '/__rommayo/style.css': ['style.css', 'text/css'],
         '/__rommayo/rommayo-theme.css': ['rommayo-theme.css', 'text/css'], '/__rommayo/web-bridge.js': ['web-bridge.js', 'text/javascript']
       };
       if (route === '/__rommayo/icon.png') { res.setHeader('Content-Type', 'image/png'); return fs.createReadStream(path.join(assets, 'icon.png')).pipe(res); }
@@ -76,7 +87,7 @@ function createServer(config) {
       res.writeHead(404); return res.end('Not found');
     }
     const target = transport.request({ hostname: upstream.hostname, port: upstream.port || undefined, protocol: upstream.protocol, path: req.url, method: req.method, headers: headers(req) }, (response) => {
-      const values = responseHeaders(response);
+      const values = responseHeaders(response, req);
       if (response.headers['content-type']?.includes('text/html') && !route.startsWith('/api/') && !route.startsWith('/assets/')) {
         let body = Buffer.alloc(0);
         response.on('data', (chunk) => {
@@ -86,7 +97,7 @@ function createServer(config) {
         response.on('end', () => {
           if (res.writableEnded) return;
           const useSkin = /(?:^|;\s*)rommayo_theme=1(?:;|$)/.test(req.headers.cookie || '');
-          const insert = '<link rel="manifest" href="/__rommayo/manifest.webmanifest">' + (useSkin ? '<link rel="stylesheet" href="/__rommayo/rommayo-theme.css">' : '');
+          const insert = '<script src="/__rommayo/session.js" defer></script><link rel="manifest" href="/__rommayo/manifest.webmanifest">' + (useSkin ? '<link rel="stylesheet" href="/__rommayo/rommayo-theme.css">' : '');
           let html = body.toString('utf8').replace(/<link\b[^>]*rel=["']manifest["'][^>]*>/gi, '').replace('</head>', insert + '</head>');
           // Return a fresh response: upstream validators and lengths refer to the original HTML.
           delete values['content-length']; delete values['content-encoding']; delete values.etag; delete values['last-modified']; values['cache-control'] = 'no-store';

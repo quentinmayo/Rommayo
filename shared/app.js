@@ -45,7 +45,7 @@ async function connect(webLogin = false) {
   const button = document.querySelector('.connect-button');
   button.disabled = true; $('connect-text').textContent = 'Connecting…';
   try {
-    const state = await send({ type: 'connect', server: $('server').value, username: webLogin ? '' : $('username').value, password: webLogin ? '' : $('password').value, webLogin, consent: $('consent').checked, allowHttp: $('http-consent').checked, steamTheme: $('steam-theme').checked });
+    const state = await send({ type: 'connect', server: $('server').value, username: webLogin ? '' : $('username').value, password: webLogin ? '' : $('password').value, webLogin, consent: $('consent').checked, allowHttp: $('http-consent').checked, steamTheme: $('steam-theme').checked, rememberLogin: $('remember-login').checked });
     if (state) { render(state); if (state.connected) $('password').value = ''; }
   } catch (error) { showError(error.message || 'Could not connect. Check the server address.'); }
   finally { button.disabled = false; $('connect-text').textContent = 'Connect & sign in'; }
@@ -57,7 +57,7 @@ $('web-login').addEventListener('click', () => {
   for (const id of ['server', 'consent', 'http-consent']) if (!$(id).reportValidity()) return;
   connect(true);
 });
-for (const type of ['back', 'home', 'reload', 'fullscreen']) $(type).addEventListener('click', () => send({ type }).catch((e) => showError(e.message)));
+for (const type of ['back', 'home', 'reload', 'fullscreen', 'logout']) $(type).addEventListener('click', () => send({ type }).catch((e) => showError(e.message)));
 $('switch').addEventListener('click', () => send({ type: 'disconnect' }).then((s) => s && render(s)));
 $('forget').addEventListener('click', () => send({ type: 'forget' }).then((s) => s && render(s)));
 send({ type: 'init' }).then((state) => state && render(state)).catch((e) => showError(e.message));

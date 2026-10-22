@@ -23,3 +23,5 @@ Uploads and downloads stream without a ROM-size limit imposed by the wrapper. Ra
 Configure SSO redirect URIs and RomM's public URL for the companion hostname if your identity provider requires exact callback URLs. Reverse-proxy authentication, third-party callback flows and streaming configurations need validation for your deployment. Browser install/add-to-home-screen availability depends on your browser, HTTPS and RomM's service worker; the manifest alone does not guarantee offline support or installability.
 
 This service is not a publicly hosted portal to anyone's private server. It is intended to be deployed by each server's operator. No private server address is built into the public project.
+
+Remember login keeps the server’s normal cookie lifetime. Uncheck it to use browser-session cookies; a browser configured to restore sessions may retain those cookies. Use the Rommayo Log out button to end authentication explicitly without deleting local game saves.

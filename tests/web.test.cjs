@@ -7,7 +7,7 @@ before(async () => {
   upstream = http.createServer((req, res) => {
     if (req.url === '/api/login') {
       if (req.headers.authorization !== `Basic ${Buffer.from('demo:demo').toString('base64')}`) { res.writeHead(401); return res.end('{}'); }
-      res.setHeader('Set-Cookie', 'romm_session=demo-session; Domain=127.0.0.1; HttpOnly; SameSite=Lax; Path=/'); return res.end('{}');
+      res.setHeader('Set-Cookie', 'romm_session=demo-session; Domain=127.0.0.1; HttpOnly; SameSite=Lax; Max-Age=86400; Path=/'); return res.end('{}');
     }
     if (req.url === '/api/echo') { res.setHeader('Content-Type', 'application/json'); return res.end(JSON.stringify({ cookie: req.headers.cookie, origin: req.headers.origin, range: req.headers.range })); }
     if (req.url === '/upload') { let count = 0; req.on('data', (b) => count += b.length); return req.on('end', () => res.end(String(count))); }
@@ -44,4 +44,17 @@ test('proxy streams uploads and preserves cookie, origin and range behavior', as
 test('connection page and assets are available without an upstream session', async () => {
   const page = await (await fetch(base + '/__rommayo/')).text(); assert.match(page, /web-bridge.js/); assert.match(page, /USERNAME/);
   const config = await (await fetch(base + '/__rommayo/config')).json(); assert.equal(config.configuredServer, upstreamUrl);
+});
+
+test('unchecked web remember produces session cookies and logout is same-origin only', async () => {
+  const response = await connect({rememberLogin:false});
+  const cookies = response.headers.getSetCookie();
+  assert.doesNotMatch(cookies.find(value => value.startsWith('romm_session=')), /Max-Age|Expires/i);
+  assert.match(cookies.join(';'), /rommayo_remember=0/);
+  const bad = await fetch(base + '/__rommayo/logout', {method:'POST',headers:{Origin:'https://untrusted.example','Content-Type':'application/json'},body:'{}'});
+  assert.equal(bad.status,403);
+  const logout = await fetch(base + '/__rommayo/logout', {method:'POST',headers:{Origin:base,'Content-Type':'application/json',Cookie:'romm_session=demo-session; rommayo_remember=0'},body:'{}'});
+  assert.equal(logout.status,200);assert.match(logout.headers.getSetCookie().join(';'), /romm_session=; Max-Age=0/);
+  assert.equal(logout.headers.get('Clear-Site-Data'),null);
+  const html = await (await fetch(base + '/')).text(); assert.match(html, /__rommayo\/session.js/);
 });

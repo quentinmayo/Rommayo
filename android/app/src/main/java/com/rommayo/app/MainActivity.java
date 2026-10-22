@@ -80,10 +80,15 @@ public class MainActivity extends ComponentActivity {
         CookieManager.getInstance().setAcceptCookie(true);
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
         nativeLibrary = new NativeLibrary(this, root, preferences);
-        if (servers.length() > 0) {
-            try { server = ServerPolicy.normalize(servers.optString(0)); nativeLibrary.restore(server); }
-            catch (Exception issue) { nativeLibrary.login(null); }
-        } else nativeLibrary.login(null);
+        // A process can be killed without onDestroy. Clear non-remembered authentication
+        // before any API request or WebView is allowed to restore a session.
+        java.util.List<String> temporary = new java.util.ArrayList<>(preferences.getStringSet("temporarySessions", java.util.Collections.emptySet()));
+        clearTemporarySessions(temporary, 0, () -> {
+            if (servers.length() > 0) {
+                try { server = ServerPolicy.normalize(servers.optString(0)); nativeLibrary.restore(server); }
+                catch (Exception issue) { nativeLibrary.login(null); }
+            } else nativeLibrary.login(null);
+        });
     }
 
     private void configure(WebView view) {
@@ -97,17 +102,58 @@ public class MainActivity extends ComponentActivity {
         view.setFocusable(true); view.setFocusableInTouchMode(true);
     }
     String currentServer() { return server; }
-    void rememberServer(String address) {
+    private void clearTemporarySessions(java.util.List<String> addresses, int index, Runnable done) {
+        if (index == addresses.size()) { preferences.edit().remove("temporarySessions").commit(); done.run(); return; }
+        clearServerCookies(addresses.get(index), () -> clearTemporarySessions(addresses, index + 1, done));
+    }
+    void beginSession(String address, boolean remember) {
         server = address;
-        JSONArray recent = new JSONArray(); recent.put(address);
+        JSONArray recent = new JSONArray();
+        if (remember) recent.put(address);
         for (int i = 0; i < servers.length() && recent.length() < 8; i++) if (!address.equals(servers.optString(i))) recent.put(servers.optString(i));
-        servers = recent; preferences.edit().putString("servers", servers.toString()).apply();
+        servers = recent;
+        Set<String> temporary = new HashSet<>(preferences.getStringSet("temporarySessions", java.util.Collections.emptySet()));
+        if (remember) temporary.remove(address); else temporary.add(address);
+        preferences.edit().putString("servers", servers.toString()).putStringSet("temporarySessions", temporary)
+            .putBoolean("rememberLogin", remember).putString("lastServer", address).commit();
+    }
+    private void removeSession(String address) {
+        JSONArray recent = new JSONArray(); for (int i = 0; i < servers.length(); i++) if (!address.equals(servers.optString(i))) recent.put(servers.optString(i));
+        servers = recent; Set<String> temporary = new HashSet<>(preferences.getStringSet("temporarySessions", java.util.Collections.emptySet())); temporary.remove(address);
+        preferences.edit().putString("servers", recent.toString()).putStringSet("temporarySessions", temporary).commit();
+    }
+    private void clearServerCookies(String address, Runnable done) {
+        CookieManager cookies = CookieManager.getInstance();
+        Uri uri = Uri.parse(address); Set<String> names = new HashSet<>();
+        for (String location : new String[]{address, address + "api/", ServerPolicy.origin(address) + "/"}) {
+            String values = cookies.getCookie(location);
+            if (values != null) for (String value : values.split(";")) { int equals = value.indexOf('='); if (equals > 0) names.add(value.substring(0, equals).trim()); }
+        }
+        java.util.List<String> expired = new java.util.ArrayList<>();
+        for (String name : names) for (String path : new String[]{"/", uri.getPath(), uri.getPath() + "api"}) {
+            String cookie = name + "=; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=" + path + (address.startsWith("https:") ? "; Secure" : "");
+            expired.add(cookie); expired.add(cookie + "; Domain=" + uri.getHost());
+        }
+        if (expired.isEmpty()) { done.run(); return; }
+        java.util.concurrent.atomic.AtomicInteger left = new java.util.concurrent.atomic.AtomicInteger(expired.size());
+        for (String value : expired) cookies.setCookie(address, value, success -> { if (left.decrementAndGet() == 0) { cookies.flush(); done.run(); } });
+    }
+    void logOut() {
+        String address = server; closeWeb(); nativeLibrary.endSession();
+        RommApi logout = new RommApi(address);
+        logout.logout((body, error) -> {
+            logout.close();
+            clearServerCookies(address, () -> { removeSession(address); server = ""; nativeLibrary.login(error == null ? "Logged out. Your local game saves are preserved." : "Logged out on this device. The server could not be reached to end its session."); });
+        });
     }
     void forgetSessions() {
-        closeWeb();
-        CookieManager.getInstance().removeAllCookies(done -> CookieManager.getInstance().flush());
-        // Forget authentication without deleting browser-local game saves or states.
-        servers = new JSONArray(); server = ""; preferences.edit().remove("servers").apply(); nativeLibrary.login(null);
+        closeWeb(); nativeLibrary.endSession();
+        CookieManager.getInstance().removeAllCookies(done -> {
+            CookieManager.getInstance().flush();
+            servers = new JSONArray(); server = "";
+            preferences.edit().remove("servers").remove("temporarySessions").apply(); nativeLibrary.login(null);
+        });
+        // Keep WebStorage / IndexedDB: authentication cleanup must preserve game saves.
     }
     void openWeb(String path) {
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) { toast("Update Android System WebView or Chrome to use the player."); return; }

@@ -12,7 +12,7 @@
 
 Rommayo brings your self-hosted [RomM](https://romm.app/) library to Android phones and tablets, desktop computers, Steam Deck, and a self-hosted web app. Android now has a **native, Steam-inspired library**: cover art, search, platform filters, recents and game details, with touch and controller navigation. RomM's web players handle emulation; **Full RomM** provides collections, saves, metadata and administration. Desktop uses Electron with the actual RomM website.
 
-Enter your **server IP or URL, username, and password**. Rommayo signs into RomM and keeps the session cookie on your device. The wrapper does not save your password, and there is no Rommayo account or central service.
+Enter your **server IP or URL, username, and password**. Rommayo signs into RomM and keeps the session cookie on your device. **Remember login** keeps the session between app restarts; uncheck it for a temporary session. Use **Settings → Log out** on Android or the desktop toolbar’s **Log out** button to end this device’s session without deleting local game saves. The wrapper does not save your password, and there is no Rommayo account or central service.
 
 > **Public alpha:** The full RomM interface is available, but that does not mean every emulator and web API has been certified on every device. See the [compatibility and test matrix](docs/compatibility.md).
 
@@ -20,20 +20,20 @@ Enter your **server IP or URL, username, and password**. Rommayo signs into RomM
 
 ## Download & install
 
-**No Node.js, npm or development server required.** Download the installer for your device below, then connect to your existing RomM server. These are the v0.2.2 public alpha packages.
+**No Node.js, npm or development server required.** Download the installer for your device below, then connect to your existing RomM server. These are the v0.2.3 public alpha packages.
 
 ## Pick your screen
 
 | Device | Edition | Start here |
 | --- | --- | --- |
-| Android phone / tablet | Signed APK · Android 10+ | [Download APK](https://github.com/quentinmayo/Rommayo/releases/download/v0.2.2/Rommayo-v0.2.2-android.apk) |
-| Steam Deck / Linux x64 | AppImage · fullscreen mode | [Download AppImage](https://github.com/quentinmayo/Rommayo/releases/download/v0.2.2/Rommayo-0.2.2-linux-x86_64.AppImage) · [Deck guide](docs/steam-deck.md) |
-| Windows x64 | Desktop installer | [Download Windows installer](https://github.com/quentinmayo/Rommayo/releases/download/v0.2.2/Rommayo-0.2.2-win-x64.exe) |
-| macOS Apple Silicon | Desktop disk image | [Download Apple Silicon DMG](https://github.com/quentinmayo/Rommayo/releases/download/v0.2.2/Rommayo-0.2.2-mac-arm64.dmg) |
-| macOS Intel | Desktop disk image | [Download Intel DMG](https://github.com/quentinmayo/Rommayo/releases/download/v0.2.2/Rommayo-0.2.2-mac-x64.dmg) |
+| Android phone / tablet | Signed APK · Android 10+ | [Download APK](https://github.com/quentinmayo/Rommayo/releases/download/v0.2.3/Rommayo-v0.2.3-android.apk) |
+| Steam Deck / Linux x64 | AppImage · fullscreen mode | [Download AppImage](https://github.com/quentinmayo/Rommayo/releases/download/v0.2.3/Rommayo-0.2.3-linux-x86_64.AppImage) · [Deck guide](docs/steam-deck.md) |
+| Windows x64 | Desktop installer | [Download Windows installer](https://github.com/quentinmayo/Rommayo/releases/download/v0.2.3/Rommayo-0.2.3-win-x64.exe) |
+| macOS Apple Silicon | Desktop disk image | [Download Apple Silicon DMG](https://github.com/quentinmayo/Rommayo/releases/download/v0.2.3/Rommayo-0.2.3-mac-arm64.dmg) |
+| macOS Intel | Desktop disk image | [Download Intel DMG](https://github.com/quentinmayo/Rommayo/releases/download/v0.2.3/Rommayo-0.2.3-mac-x64.dmg) |
 | Browser | Self-hosted web companion | [Web / Docker guide](docs/web.md) |
 
-Verify downloads with [SHA256SUMS.txt](https://github.com/quentinmayo/Rommayo/releases/download/v0.2.2/SHA256SUMS.txt). The website is [rommayo.quentinmayo.com](https://rommayo.quentinmayo.com); the commands in “Build it yourself” are only for contributors.
+Verify downloads with [SHA256SUMS.txt](https://github.com/quentinmayo/Rommayo/releases/download/v0.2.3/SHA256SUMS.txt). The website is [rommayo.quentinmayo.com](https://rommayo.quentinmayo.com); the commands in “Build it yourself” are only for contributors.
 
 Steam Deck support means a **non-Steam application** you add to your library. Rommayo is not listed on the Steam store, Steam Verified, or affiliated with Valve.
 

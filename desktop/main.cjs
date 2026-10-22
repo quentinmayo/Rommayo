@@ -7,11 +7,11 @@ const { normalizeServer, isWebUrl, sameOrigin, partitionFor } = require('./polic
 
 protocol.registerSchemesAsPrivileged([{ scheme: 'rommayo', privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
 if (process.env.ROMMAYO_USER_DATA_DIRECTORY) app.setPath('userData', process.env.ROMMAYO_USER_DATA_DIRECTORY);
-let window, remote, server = '', servers = [], connecting = false;
+let window, remote, server = '', servers = [], connecting = false, temporaryServers = [];
 const deck = process.argv.includes('--deck');
 const shellUrl = 'rommayo://app/index.html';
 function configPath() { return path.join(app.getPath('userData'), 'servers.json'); }
-function save() { fs.writeFileSync(configPath(), JSON.stringify({ servers }, null, 2), { mode: 0o600 }); }
+function save() { fs.writeFileSync(configPath(), JSON.stringify({ servers, temporaryServers }, null, 2), { mode: 0o600 }); }
 function state(error) { return { connected: !!remote, server, servers, error }; }
 function sendState(error) { if (window && !window.isDestroyed()) window.webContents.send('rommayo:state', state(error)); }
 function layout() {
@@ -58,6 +58,25 @@ function configureSession(ses) {
     });
   });
 }
+async function clearAuthentication(address) {
+  const ses = session.fromPartition(partitionFor(address));
+  await ses.clearStorageData({ storages: ['cookies'] });
+  await ses.cookies.flushStore();
+}
+async function logOut() {
+  if (!remote || connecting) return;
+  const choice = await dialog.showMessageBox(window, { type: 'question', message: 'Log out of RomM?', detail: 'Save your game before leaving. This ends this device’s session and preserves local game saves.', buttons: ['Stay', 'Log out'], defaultId: 0, cancelId: 0 });
+  if (choice.response !== 1) return;
+  const address = server, ses = remote.webContents.session;
+  connecting = true;
+  try {
+    closeRemote();
+    const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 10000);
+    try { const response = await ses.fetch(new URL('api/logout', address).href, { method: 'POST', credentials: 'include', redirect: 'error', signal: controller.signal }); await response.arrayBuffer(); } catch { /* Local sign-out must work offline. */ } finally { clearTimeout(timeout); }
+    await clearAuthentication(address);
+    servers = servers.filter(value => value !== address); temporaryServers = temporaryServers.filter(value => value !== address); server = ''; save();
+  } finally { connecting = false; sendState(); }
+}
 async function connect(command) {
   if (connecting) throw new Error('A connection is already in progress.');
   const address = normalizeServer(command.server);
@@ -70,6 +89,11 @@ async function connect(command) {
   try {
     const ses = session.fromPartition(partitionFor(address));
     configureSession(ses);
+    // Persist cleanup intent before the upstream can issue persistent cookies.
+    const remember = command.rememberLogin !== false;
+    temporaryServers = temporaryServers.filter(value => value !== address);
+    if (!remember) { temporaryServers.push(address); servers = servers.filter(value => value !== address); }
+    save();
     if (!command.webLogin) {
       // RomM may prefer a stale session cookie over freshly supplied Basic credentials.
       // An explicit username/password login starts a fresh session for this server.
@@ -138,7 +162,7 @@ async function connect(command) {
       if ((input.control || input.meta) && input.shift && input.key.toLowerCase() === 's') { event.preventDefault(); closeRemote(); }
     });
     await view.webContents.loadURL(address);
-    servers = [address, ...servers.filter((s) => s !== address)].slice(0, 8); save();
+    servers = command.rememberLogin === false ? servers.filter(s => s !== address) : [address, ...servers.filter(s => s !== address)].slice(0, 8); save();
     view.webContents.focus(); sendState();
     return state();
   } catch (error) {
@@ -159,21 +183,21 @@ async function command(event, payload) {
     case 'reload': remote?.webContents.reload(); break;
     case 'fullscreen': window.setFullScreen(!window.isFullScreen()); layout(); break;
     case 'disconnect': closeRemote(); break;
+    case 'logout': await logOut(); break;
     case 'forget': {
-      const choice = await dialog.showMessageBox(window, { type: 'question', message: 'Forget all saved RomM sessions?', detail: 'This signs this app out of every saved server and clears its web data. Your server and game library are unchanged.', buttons: ['Cancel', 'Forget sessions'], defaultId: 0, cancelId: 0 });
+      const choice = await dialog.showMessageBox(window, { type: 'question', message: 'Forget all saved RomM sessions?', detail: 'This signs this app out of every saved server. Local game saves and exported files are preserved.', buttons: ['Cancel', 'Forget sessions'], defaultId: 0, cancelId: 0 });
       if (choice.response !== 1) break;
       closeRemote();
-      for (const saved of new Set([...servers, ...(server ? [server] : [])])) {
-        const ses = session.fromPartition(partitionFor(saved));
-        await ses.clearStorageData(); await ses.clearCache();
+      for (const saved of new Set([...servers, ...temporaryServers, ...(server ? [server] : [])])) {
+        await clearAuthentication(saved);
       }
-      servers = []; server = ''; save(); break;
+      servers = []; temporaryServers = []; server = ''; save(); break;
     }
     default: throw new Error('Unknown command.');
   }
   sendState(); return state();
 }
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   protocol.handle('rommayo', (request) => {
     const url = new URL(request.url);
     const allowed = ['index.html', 'style.css', 'app.js'];
@@ -181,7 +205,13 @@ app.whenReady().then(() => {
     if (url.hostname !== 'app' || !allowed.includes(name)) return new Response('Not found', { status: 404 });
     return net.fetch(pathToFileURL(path.join(__dirname, '..', 'shared', name)).href);
   });
-  try { servers = JSON.parse(fs.readFileSync(configPath(), 'utf8')).servers.map(normalizeServer).slice(0, 8); } catch { servers = []; }
+  try {
+    const config = JSON.parse(fs.readFileSync(configPath(), 'utf8'));
+    servers = config.servers.map(normalizeServer).slice(0, 8);
+    temporaryServers = (config.temporaryServers || []).map(normalizeServer);
+  } catch { servers = []; temporaryServers = []; }
+  for (const address of temporaryServers) { await clearAuthentication(address); servers = servers.filter(value => value !== address); }
+  temporaryServers = []; save();
   ipcMain.handle('rommayo:command', command);
   function createWindow() {
     window = new BrowserWindow({ width: 1200, height: 920, minWidth: 360, minHeight: 500, backgroundColor: '#101413', title: 'Rommayo', icon: path.join(__dirname, '..', 'assets', 'icon.png'),
@@ -196,6 +226,7 @@ app.whenReady().then(() => {
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     ...(process.platform === 'darwin' ? [{ role: 'appMenu' }] : []),
     { label: 'Rommayo', submenu: [
+      { label: 'Log out', click: () => logOut().catch(() => sendState('Could not finish signing out. Please retry.')) },
       { label: 'Switch server', accelerator: 'CmdOrCtrl+Shift+S', click: closeRemote },
       { label: 'RomM home', accelerator: 'CmdOrCtrl+Home', click: () => remote?.webContents.loadURL(server) },
       { label: 'Reload', accelerator: 'CmdOrCtrl+R', click: () => remote?.webContents.reload() },
