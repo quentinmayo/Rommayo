@@ -28,18 +28,24 @@ The executable is `~/.local/share/rommayo/Rommayo.AppImage`, the launcher is `~/
 
 ![Rommayo connection screen on an actual Steam Deck](screenshots/steam-deck-connect.png)
 
+![Rommayo launched through Steam Gaming Mode](screenshots/steam-deck-gaming-mode.png)
+
 For a manual AppImage download, make it executable, add it to Steam and set Launch Options to `--deck --ozone-platform=x11`.
 
 ## Connect and configure controls
 
 Enter the RomM URL/IP, username and password you already use. Acknowledge the server notice and HTTP notice if applicable. **Remember login** retains the cookie between app restarts; passwords are never saved. The desktop toolbar has **Log out**, which preserves local game saves. Press **Esc** to expose the toolbar if fullscreen hides it.
 
+The Deck launcher excludes `LD_PRELOAD` to prevent Steam’s injected overlay library from stalling Electron startup. It also selects XWayland. Steam’s system menu remains available.
+
 Use a Steam Input gamepad layout. Keep sticks, D-pad and face buttons assigned as gamepad inputs. For the connection form and file picker, configure **Right Trackpad → As Mouse**, with trackpad press or a trigger assigned to **Left Mouse Click**. **STEAM + X** opens the keyboard. Configure gameplay mapping in the RomM player’s **Control Settings**.
+
+If the on-screen keyboard duplicates a connected keyboard’s input, close it with **B / STEAM + X** before typing. For a RomM server on plain HTTP, gamepad APIs can be restricted; use trusted HTTPS or map Steam Input to the player’s keyboard controls.
 
 Save or export before leaving the player. Keep exported backups before clearing app data or moving devices. Close Rommayo before rerunning the installer to update; it preserves app profiles and keeps the previous AppImage as `Rommayo.AppImage.previous`.
 
 ## Test evidence
 
-Physical Steam Deck testing on October 22, 2026 used a GLKVM and a docked 1920 × 1080 display. The checksum-verified installer, AppImage launch, live RomM login/library and C64 homebrew core boot were verified. Gaming Mode and built-in controller results are tracked in [compatibility](compatibility.md). Universal core, controller and suspend/resume certification is not implied.
+Physical Steam Deck testing on October 22, 2026 used a GLKVM and a docked 1920 × 1080 display. The checksum-verified installer, AppImage launch, live RomM login/library and C64 homebrew core boot were verified. Gaming Mode app launch was also verified after excluding Steam overlay injection. Gameplay and built-in controller results are tracked in [compatibility](compatibility.md). Universal core, controller and suspend/resume certification is not implied.
 
 Published screenshots redact private connection details and blur game artwork where it appears. No games, BIOS files or credentials are included in the repository.

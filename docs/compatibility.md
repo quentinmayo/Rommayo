@@ -16,7 +16,7 @@ Initial live validation used RomM 5.4.0, a Galaxy S24 Ultra and macOS Apple Sili
 | Browser emulation | RomM's own players, engines and configured cores | Player smoke check; no all-platform game certification |
 | SSO | RomM sign-in with explicit external-origin navigation | Implemented; provider-specific flows not certified |
 | Android menu controllers | Android key/axis input, focus, A/B swap, dead zone, controller check | Injected A/B/X/Y/shoulder checks; physical Xbox/retro-handheld testing pending |
-| Steam Deck installation / launch | Checksum-verified AppImage and --deck launcher | Physical Deck install, login/library and C64 homebrew core boot through GLKVM on 2026-10-22 |
+| Steam Deck installation / launch | Checksum-verified AppImage and --deck launcher | Physical Deck install, Desktop Mode login/library and C64 homebrew core boot; Gaming Mode app launch after excluding overlay injection, 2026-10-22 |
 | Gameplay controllers / fullscreen | Browser player mapping and native web engine | Fullscreen host implemented; physical Deck/gamepad testing pending |
 | Web streaming | HTTP streaming, ranges, WebSocket upgrades | Automated forwarding checks; remote emulator streaming not certified |
 
