@@ -1,14 +1,11 @@
-Your whole RomM, wherever you press play.
+Install Rommayo for Android, macOS Apple Silicon or Intel, Windows, and Linux/Steam Deck. **Packaged apps do not require Node.js, npm or development-server commands.** Get the installer for your device from Assets below, or use https://rommayo.quentinmayo.com/#downloads.
 
-The public alpha includes Android, Linux/Steam Deck, Windows, macOS Apple Silicon, and a self-hosted web companion. Connect with your RomM server URL, username and password, then use the full RomM website with an optional Steam-inspired blue theme. Passwords are not saved by the wrapper; native/browser cookies keep your session.
+This packaging update gives both Mac builds valid ad-hoc code signatures and verifies them during release. Mac apps are not Apple-notarized and Windows installers are unsigned; operating-system publisher checks can apply. Linux users make the AppImage executable. Steam Deck users add it as a non-Steam app with `--deck`.
 
-Desktop navigation now shows a Stay / Leave confirmation when a running game or unsaved page blocks navigation, instead of silently ignoring Home or Reload.
+Android has a native Steam-inspired library, search, platform filters, recents, details and controller settings. WebViews handle gameplay and Full RomM. Desktop uses Electron with the full RomM website. Sign in with your existing server URL, username and password. Session cookies stay on your device; passwords are not saved by the companion.
 
-- Android: install the signed APK on Android 10+. Remove any earlier debug installation before switching to the release signing identity.
-- Steam Deck/Linux: use the x64 AppImage; add it as a non-Steam game with `--deck` launch options.
-- Windows/macOS: initial desktop packages are unsigned; normal OS publisher/security prompts may apply.
-- Web: see `docs/web.md` in the source for Node.js and Docker setup.
+No gameplay changes are included in this packaging patch. Android retains the previous fix preserving local game saves when forgetting login sessions. Intel Mac sign-in was checked under Rosetta; physical Intel, Steam Deck, Xbox/retro-controller gameplay and universal core compatibility remain pending. See the compatibility matrix in the repository.
 
-This is a public alpha, not universal emulator certification. Physical Steam Deck/controller testing, provider-specific SSO flows and all-platform gameplay certification remain open. Check `docs/compatibility.md` for tested coverage and browser limitations.
+All packages have SHA-256 checksums in `SHA256SUMS.txt`. No ROMs, BIOS files, keys or games are included. No third-party ROM sourcing/download support. Use only content you are authorized to access; downloads and use are at your own risk. Rommayo is independent of RomM and Valve.
 
-No ROMs, BIOS files, decryption keys or games are included. No third-party ROM sourcing/download support is provided. Use only content you are authorized to access; transfers and use are at your own risk.
+Website: https://rommayo.quentinmayo.com · Support: https://buymeacoffee.com/quentinmayo
